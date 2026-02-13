@@ -1,5 +1,6 @@
 import { useRef, useEffect } from "react";
 import type { Clue } from "../../types/puzzle";
+import type { ClueHighlight } from "./ClueList";
 
 const SCROLL_DURATION_MS = 400;
 
@@ -30,9 +31,33 @@ function smoothScrollTo(container: Element, targetTop: number) {
   requestAnimationFrame(step);
 }
 
+function getClassName(highlight: ClueHighlight, isComplete: boolean): string {
+  const base = "cursor-pointer rounded px-2 py-1 text-sm";
+
+  if (highlight === "primary") {
+    // Active clue you're typing into — strong blue bg, gray text if completed
+    const text = isComplete
+      ? "text-blue-400 font-semibold"
+      : "font-semibold text-blue-900";
+    return `${base} bg-blue-100 ${text}`;
+  }
+
+  if (highlight === "cross") {
+    // Associated cross-direction clue — subtle blue bg, gray text if completed
+    const text = isComplete ? "text-blue-300" : "text-blue-800";
+    return `${base} bg-blue-50 ${text}`;
+  }
+
+  // Not highlighted
+  if (isComplete) {
+    return `${base} text-gray-400 hover:bg-gray-100`;
+  }
+  return `${base} text-gray-800 hover:bg-gray-100`;
+}
+
 interface ClueItemProps {
   clue: Clue;
-  isActive: boolean;
+  highlight: ClueHighlight;
   isComplete: boolean;
   scrollToTop: boolean;
   onClick: (clue: Clue) => void;
@@ -40,16 +65,17 @@ interface ClueItemProps {
 
 export default function ClueItem({
   clue,
-  isActive,
+  highlight,
   isComplete,
   scrollToTop,
   onClick,
 }: ClueItemProps) {
   const ref = useRef<HTMLLIElement>(null);
+  const isHighlighted = highlight !== null;
 
-  // Auto-scroll to active clue
+  // Auto-scroll to highlighted clue (both primary and cross)
   useEffect(() => {
-    if (!isActive || !ref.current) return;
+    if (!isHighlighted || !ref.current) return;
 
     if (scrollToTop) {
       const parent = ref.current.closest("ol");
@@ -59,19 +85,13 @@ export default function ClueItem({
     } else {
       ref.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
-  }, [isActive, scrollToTop]);
+  }, [isHighlighted, scrollToTop]);
 
   return (
     <li
       ref={ref}
       onClick={() => onClick(clue)}
-      className={`cursor-pointer rounded px-2 py-1 text-sm ${
-        isActive
-          ? "bg-blue-100 font-semibold text-blue-900"
-          : isComplete
-            ? "text-gray-400 hover:bg-gray-100"
-            : "text-gray-800 hover:bg-gray-100"
-      }`}
+      className={getClassName(highlight, isComplete)}
     >
       <span className="mr-1.5 font-medium text-gray-500">{clue.number}.</span>
       {clue.text}

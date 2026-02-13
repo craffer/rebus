@@ -1,20 +1,34 @@
 import type { Clue, Direction } from "../../types/puzzle";
 import ClueItem from "./ClueItem";
 
+export type ClueHighlight = "primary" | "cross" | null;
+
 interface ClueListProps {
   title: string;
   clues: Clue[];
-  activeClueNumber: number | null;
+  primaryClueNumber: number | null;
+  crossClueNumber: number | null;
   completedClueNumbers: Set<number>;
   scrollToTop: boolean;
   onClueClick: (clue: Clue, direction: Direction) => void;
   direction: Direction;
 }
 
+function getHighlight(
+  clueNumber: number,
+  primaryClueNumber: number | null,
+  crossClueNumber: number | null,
+): ClueHighlight {
+  if (clueNumber === primaryClueNumber) return "primary";
+  if (clueNumber === crossClueNumber) return "cross";
+  return null;
+}
+
 export default function ClueList({
   title,
   clues,
-  activeClueNumber,
+  primaryClueNumber,
+  crossClueNumber,
   completedClueNumbers,
   scrollToTop,
   onClueClick,
@@ -30,7 +44,11 @@ export default function ClueList({
           <ClueItem
             key={clue.number}
             clue={clue}
-            isActive={activeClueNumber === clue.number}
+            highlight={getHighlight(
+              clue.number,
+              primaryClueNumber,
+              crossClueNumber,
+            )}
             isComplete={completedClueNumbers.has(clue.number)}
             scrollToTop={scrollToTop}
             onClick={(c) => onClueClick(c, direction)}

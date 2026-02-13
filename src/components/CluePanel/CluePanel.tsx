@@ -49,14 +49,15 @@ export default function CluePanel() {
 
   if (!puzzle) return null;
 
-  const acrossActiveNumber =
-    direction === "across"
-      ? (currentClue?.number ?? null)
-      : (crossClue?.number ?? null);
-  const downActiveNumber =
-    direction === "down"
-      ? (currentClue?.number ?? null)
-      : (crossClue?.number ?? null);
+  // Primary = the clue you're typing into, cross = the associated other-direction clue
+  const acrossPrimaryNumber =
+    direction === "across" ? (currentClue?.number ?? null) : null;
+  const acrossCrossNumber =
+    direction === "down" ? (crossClue?.number ?? null) : null;
+  const downPrimaryNumber =
+    direction === "down" ? (currentClue?.number ?? null) : null;
+  const downCrossNumber =
+    direction === "across" ? (crossClue?.number ?? null) : null;
 
   if (isPaused) {
     return (
@@ -86,7 +87,8 @@ export default function CluePanel() {
         <ClueList
           title="Across"
           clues={puzzle.clues.across}
-          activeClueNumber={acrossActiveNumber}
+          primaryClueNumber={acrossPrimaryNumber}
+          crossClueNumber={acrossCrossNumber}
           completedClueNumbers={completedAcross}
           scrollToTop={scrollToTop}
           onClueClick={handleClueClick}
@@ -95,7 +97,8 @@ export default function CluePanel() {
         <ClueList
           title="Down"
           clues={puzzle.clues.down}
-          activeClueNumber={downActiveNumber}
+          primaryClueNumber={downPrimaryNumber}
+          crossClueNumber={downCrossNumber}
           completedClueNumbers={completedDown}
           scrollToTop={scrollToTop}
           onClueClick={handleClueClick}
