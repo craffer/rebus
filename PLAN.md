@@ -225,7 +225,7 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 ### Step 5: Keyboard Navigation + Settings ✅
 - [x] Files: `src/hooks/useKeyboardNavigation.ts`, `src/store/settingsStore.ts`, `src/types/settings.ts`
 - [x] Define all settings types and defaults (matching NYT defaults from table above)
-- [ ] Settings store with persistence (read/write JSON to Tauri app data dir)
+- [x] Settings store with persistence (read/write JSON to Tauri app data dir)
 - [x] All navigation behavior reads from settings store
 - [x] Unit tests for navigation logic (`gridNavigation.ts`) — 24 tests passing
 
@@ -259,17 +259,19 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - [ ] Unit tests with fixture files
 - [x] `open_puzzle` command already dispatches by extension
 
-## Phase 2 (Future)
-- Check/reveal (per-cell, per-word, full puzzle)
-- Pencil mode, rebus mode UI
-- Save/resume progress to disk
-- Recent files list
-- Settings UI panel
-- Custom key bindings UI
-- Dark mode
-- Completion animation + sound
-- Countdown timer mode (for timed practice)
-- Puzzle statistics tracking (solve times, streaks)
+## Phase 2
+- [x] Settings persistence to disk (Tauri fs plugin, auto-save with 500ms debounce)
+- [x] Dark mode (light/dark/system, canvas + Tailwind, `useIsDarkMode` hook)
+- [x] Completion animation + sound (CSS confetti overlay, Web Audio chime)
+- [x] Settings UI panel (modal with gear icon, Cmd+,, Toggle/Select components)
+- [ ] Check/reveal (per-cell, per-word, full puzzle)
+- [ ] Pencil mode, rebus mode UI
+- [ ] Save/resume progress to disk
+- [ ] Recent files list
+- [ ] Custom key bindings UI
+- [ ] Countdown timer mode (for timed practice)
+- [ ] Puzzle statistics tracking (solve times, streaks)
+- [ ] Better app icon
 
 ## Verification
 1. `cargo test -p xword-parser` — all parser tests pass
