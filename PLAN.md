@@ -1,0 +1,274 @@
+# Rebus - Crossword Puzzle Solver App
+
+## Context
+
+Build a native desktop crossword puzzle solving application from scratch. The goal is to replicate the NYTimes crossword solving experience but for puzzles from any source. Target audience is serious/competitive solvers who care about speed and keyboard-driven interaction. Must work offline.
+
+## Technology Stack
+
+- **Framework**: Tauri v2 (Rust backend + web frontend)
+  - ~30MB memory, <500ms startup, 3-10MB bundle (vs Electron's 200MB+ / 100MB+)
+  - Uses system WebView for native feel
+- **Frontend**: React 19 + TypeScript + Vite
+- **Styling**: Tailwind CSS v4
+- **Grid Rendering**: HTML5 Canvas (pixel-perfect control, ~1ms repaints)
+- **State Management**: Zustand + immer middleware
+- **Rust deps**: `serde`, `byteorder`, `thiserror`, `encoding_rs`, `tauri-plugin-dialog`, `tauri-plugin-fs`
+- **Testing**: Vitest (frontend), `cargo test` (Rust), with test fixtures of real .puz/.ipuz/.jpz files
+- **Linting/Formatting**: ESLint + Prettier (frontend), `rustfmt` + `clippy` (Rust), enforced via pre-commit hooks
+
+## Architecture
+
+### Rust Backend
+
+#### `crossword-parser` — Standalone Rust Crate (`crates/crossword-parser/`)
+A reusable library crate, separate from the Tauri app, so it can be published to crates.io or used in other contexts (CLI tools, WASM, etc.).
+
+- **Unified `Puzzle` type**: All parsers produce the same output struct regardless of input format
+- **.puz parser** (Across Lite binary format — de facto industry standard)
+  - Header validation (magic string `ACROSS&DOWN\0`, CRC-16 checksums)
+  - Grid parsing (solution + player state)
+  - String extraction (title, author, copyright, clues, notes)
+  - Extension sections: GRBS/RTBL (rebus), GEXT (circles/flags), LTIM (timer)
+  - Encoding: try UTF-8, fall back to ISO-8859-1/Windows-1252 via `encoding_rs`
+- **.ipuz parser** (JSON-based open standard — growing adoption)
+  - Parse via `serde_json`, map to unified `Puzzle` type
+- **.jpz parser** (XML-based — flexible, used by some publishers)
+  - Parse via `quick-xml`, map to unified `Puzzle` type
+- **Clue numbering algorithm**: Scan L-to-R, T-to-B, assign numbers at word starts
+- **Thorough unit tests**: Test against real puzzle files for each format, round-trip fidelity
+
+#### Tauri App (`src-tauri/`)
+- Depends on `crossword-parser` as a path dependency
+- **Tauri commands**: `open_puzzle(file_path)` dispatches to the right parser by extension, returns `Puzzle` JSON
+- Thin layer — parsing logic lives in the crate, not here
+
+### React Frontend (`src/`)
+- **Canvas grid** (`GridRenderer.ts`): Pure function, draws entire grid in one paint call. Subscribes directly to Zustand (bypasses React rendering).
+- **Clue panel** (`CluePanel/`): Two scrollable lists (Across/Down), auto-scrolls to active clue
+- **Keyboard handler** (`useKeyboardNavigation.ts`): All navigation behavior driven by settings store
+- **Zustand stores**: `puzzleStore.ts` (grid state, cursor, direction), `settingsStore.ts` (persisted preferences)
+
+### Data Flow
+```
+File → Rust parser (crossword-parser crate) → Puzzle JSON → Tauri IPC → Zustand store → Canvas render
+                                                                                       → Clue panel
+User input → Keyboard handler → Zustand store → Canvas render (re-subscribes)
+```
+
+### Directory Structure
+```
+rebus-2/
+├── crates/
+│   └── crossword-parser/          # Standalone Rust crate
+│       ├── src/
+│       │   ├── lib.rs             # Public API: parse(bytes, format) → Puzzle
+│       │   ├── types.rs           # Puzzle, Cell, Clue, CellKind structs
+│       │   ├── puz.rs             # .puz binary parser
+│       │   ├── ipuz.rs            # .ipuz JSON parser
+│       │   ├── jpz.rs             # .jpz XML parser
+│       │   └── error.rs           # Error types
+│       ├── tests/
+│       │   ├── fixtures/          # Real .puz, .ipuz, .jpz test files
+│       │   └── parser_tests.rs    # Integration tests
+│       └── Cargo.toml
+├── src-tauri/                     # Tauri app backend
+│   ├── src/
+│   │   ├── main.rs
+│   │   ├── lib.rs                 # Tauri builder, plugin + command registration
+│   │   └── commands.rs            # open_puzzle, check, reveal commands
+│   └── Cargo.toml                 # depends on crossword-parser via path
+├── src/                           # React frontend
+│   ├── main.tsx
+│   ├── App.tsx
+│   ├── components/
+│   │   ├── Grid/
+│   │   │   ├── Grid.tsx           # Canvas setup, mouse handling, Zustand subscription
+│   │   │   ├── GridRenderer.ts    # Pure canvas drawing (no React)
+│   │   │   └── constants.ts       # Cell size, colors, fonts
+│   │   ├── CluePanel/
+│   │   │   ├── CluePanel.tsx
+│   │   │   ├── ClueList.tsx
+│   │   │   └── ClueItem.tsx
+│   │   ├── Toolbar.tsx
+│   │   ├── Timer.tsx
+│   │   └── WelcomeScreen.tsx
+│   ├── hooks/
+│   │   ├── useKeyboardNavigation.ts
+│   │   ├── usePuzzleLoader.ts
+│   │   └── useTimer.ts
+│   ├── store/
+│   │   ├── puzzleStore.ts
+│   │   ├── settingsStore.ts
+│   │   └── selectors.ts
+│   ├── types/
+│   │   ├── puzzle.ts              # Mirrors Rust Puzzle types
+│   │   └── settings.ts
+│   ├── utils/
+│   │   └── gridNavigation.ts      # Next cell, word boundaries, etc.
+│   └── styles/
+│       └── index.css
+├── index.html
+├── package.json
+├── vite.config.ts
+├── tsconfig.json
+├── eslint.config.js               # ESLint flat config
+├── .prettierrc
+├── .pre-commit-config.yaml        # Pre-commit hooks
+├── Cargo.toml                     # Workspace root
+└── CLAUDE.md
+```
+
+## Layout
+```
++--------------------------------------------------+
+| Toolbar: Open | Timer | Check | Reveal | Rebus    |
++-------------------+------------------------------+
+|                   |  Across Clues                |
+|   Canvas Grid     |  1. First clue...            |
+|   (60% width,     |  5. Another...               |
+|    square,         |------------------------------+
+|    centered)      |  Down Clues                  |
+|                   |  1. First down...            |
++-------------------+------------------------------+
+```
+
+## Solver Settings (Customizable)
+
+All settings persisted to disk via Tauri fs plugin. Stored as JSON in the app's data directory.
+
+### Navigation Settings
+| Setting | Default | NYT Default | Options |
+|---------|---------|-------------|---------|
+| After changing direction with arrow keys | Stay in same square | Same | Stay in same square / Move in direction of arrow |
+| Spacebar behavior | Clear current square and advance | Same | Clear and advance / Toggle Across/Down |
+| Backspace into previous word | Off | Off | On / Off |
+| Skip over filled squares (within word) | On | On | On / Off |
+| Skip penciled-in squares too | On | On | On / Off (only relevant if skip filled is on) |
+| At end of word: jump back to first blank | Off | Off | On / Off |
+| At end of word: jump to next clue | Off | Off | On / Off (only if not jumping back) |
+
+### Feedback Settings
+| Setting | Default | Options |
+|---------|---------|---------|
+| Play sound on solve | On | On / Off |
+| Show timer | On | On / Off |
+| Show puzzle milestones | On | On / Off |
+| Suppress disqualification warnings | Off | On / Off |
+
+### Rebus-Only Settings (Beyond NYT)
+| Setting | Default | Options |
+|---------|---------|---------|
+| Custom key bindings | System defaults | User-configurable map |
+| Auto-check on completion | Off | Off / Check / Reveal |
+| Grid scale | Auto-fit | 50%-200% slider |
+| Clue font size | Medium | Small / Medium / Large |
+| Highlight style | Blue (NYT-style) | Blue / Yellow / Green / Custom color |
+| Show incorrect count in toolbar | Off | On / Off |
+| Timer counts | Up | Up / Down (for timed practice) |
+
+Settings file: `src/store/settingsStore.ts` (Zustand, persisted via Tauri fs plugin)
+Settings types: `src/types/settings.ts`
+Settings UI: `src/components/SettingsPanel.tsx` (Phase 2, settings work via defaults in Phase 1)
+
+### How Settings Affect Navigation Code
+The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `settingsStore` to determine behavior:
+- `spacebar_behavior` controls whether Space clears+advances or toggles direction
+- `skip_filled` and `skip_penciled` affect `getNextCell()` logic
+- `arrow_key_behavior` controls whether arrow keys that change direction also move the cursor
+- `backspace_into_previous_word` controls Backspace behavior at word boundaries
+- `end_of_word_action` controls what happens after filling the last cell of a word
+
+## Phase 1: Working Prototype
+
+### Step 0: Repo Setup & Tooling
+- Initialize git repo
+- Ensure latest stable Rust (`rustup update stable`) and Node.js (v22 LTS)
+- Scaffold Tauri v2 + React + TypeScript project
+- Set up Cargo workspace with `crossword-parser` crate
+- Install all deps (frontend + Rust + Tauri plugins)
+- Configure ESLint (flat config) + Prettier for TypeScript/React
+- Configure `rustfmt` + `clippy` for Rust
+- Set up pre-commit hooks (via `pre-commit` or `husky` + `lint-staged`):
+  - `prettier --check` + `eslint` on staged .ts/.tsx files
+  - `cargo fmt --check` + `cargo clippy` on staged .rs files
+- Verify `npm run tauri dev` launches an empty window
+- **Commit plan as `PLAN.md` and create `CLAUDE.md`**
+
+### Step 1: Crossword Parser Crate
+- Files: `crates/crossword-parser/src/{lib,types,puz,error}.rs`
+- Implement `Puzzle`, `Cell`, `Clue` structs with serde
+- Implement .puz binary parser with full extension support (rebus, circles, timer)
+- Implement clue numbering algorithm
+- Unit tests against real .puz fixture files
+- Wire up in `src-tauri/` — register `open_puzzle` Tauri command
+
+### Step 2: Canvas Grid Rendering
+- Files: `src/components/Grid/GridRenderer.ts`, `Grid.tsx`, `constants.ts`
+- Pure canvas drawing: black cells, borders, numbers, letters, highlights
+- HiDPI support (devicePixelRatio scaling)
+- Mouse click → grid coordinates → store update
+- Current cell (dark blue) and current word (light blue) highlighting
+
+### Step 3: State Management
+- Files: `src/store/puzzleStore.ts`, `src/store/selectors.ts`, `src/utils/gridNavigation.ts`
+- Puzzle state, cursor, direction, cell values
+- Selectors: current clue, highlighted cells, completion check
+- Navigation utilities (next cell, word boundaries, wrapping)
+
+### Step 4: Clue Panel
+- Files: `src/components/CluePanel/CluePanel.tsx`, `ClueList.tsx`, `ClueItem.tsx`
+- Two-column Across/Down layout
+- Auto-scroll to active clue
+- Click clue → navigate to word
+
+### Step 5: Keyboard Navigation + Settings
+- Files: `src/hooks/useKeyboardNavigation.ts`, `src/store/settingsStore.ts`, `src/types/settings.ts`
+- Define all settings types and defaults (matching NYT defaults from table above)
+- Settings store with persistence (read/write JSON to Tauri app data dir)
+- All navigation behavior reads from settings store
+- Unit tests for navigation logic (`gridNavigation.ts`)
+
+### Step 6: File Opening Flow
+- Cmd+O → native file picker (Tauri dialog plugin, filtered to .puz/.ipuz/.jpz)
+- Invoke `open_puzzle` → populate store → render
+- Welcome screen when no puzzle loaded
+
+### Step 7: Polish
+- Timer display
+- Window title = puzzle title
+- Toolbar with metadata (title, author)
+- Clean theme: white grid, blue highlights, system fonts
+- Responsive canvas sizing (fit to available space)
+
+### Step 8: Add .ipuz and .jpz Parsers
+- Files: `crates/crossword-parser/src/ipuz.rs`, `crates/crossword-parser/src/jpz.rs`
+- Parse to same unified `Puzzle` type
+- Unit tests with fixture files
+- `open_puzzle` command already dispatches by extension
+
+## Phase 2 (Future)
+- Check/reveal (per-cell, per-word, full puzzle)
+- Pencil mode, rebus mode UI
+- Save/resume progress to disk
+- Recent files list
+- Settings UI panel
+- Custom key bindings UI
+- Dark mode
+- Completion animation + sound
+- Countdown timer mode (for timed practice)
+- Puzzle statistics tracking (solve times, streaks)
+
+## Verification
+1. `cargo test -p crossword-parser` — all parser tests pass
+2. `npx vitest run` — all frontend tests pass
+3. Pre-commit hooks pass: `cargo fmt`, `clippy`, `eslint`, `prettier`
+4. `npm run tauri dev` — app launches with welcome screen
+5. Open a .puz file via Cmd+O — grid renders correctly with numbers and black cells
+6. Click cells — cursor moves, direction toggles on same-cell click
+7. Type letters — they appear in cells, cursor auto-advances
+8. Arrow keys, Tab, Backspace all behave per settings defaults
+9. Clue panel highlights current clue and auto-scrolls
+10. Complete a puzzle — all cells filled correctly
+11. Test with multiple .puz files including rebus puzzles and Sunday-size (21x21)
+12. Open .ipuz and .jpz files — same behavior as .puz

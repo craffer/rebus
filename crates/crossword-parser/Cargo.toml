@@ -1,0 +1,17 @@
+[package]
+name = "crossword-parser"
+version = "0.1.0"
+edition = "2021"
+description = "A parser for crossword puzzle file formats (.puz, .ipuz, .jpz)"
+license = "MIT"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+byteorder = "1"
+encoding_rs = "0.8"
+quick-xml = { version = "0.37", features = ["serialize"] }
+
+[dev-dependencies]
+pretty_assertions = "1"
