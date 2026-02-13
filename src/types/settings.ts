@@ -7,6 +7,7 @@ export type EndOfWordAction =
 export type AutoCheckMode = "off" | "check" | "reveal";
 export type TimerDirection = "up" | "down";
 export type ClueFontSize = "small" | "medium" | "large";
+export type Theme = "light" | "dark" | "system";
 
 export interface NavigationSettings {
   arrow_key_behavior: ArrowKeyBehavior;
@@ -26,6 +27,7 @@ export interface FeedbackSettings {
 }
 
 export interface AppearanceSettings {
+  theme: Theme;
   highlight_color: string;
   clue_font_size: ClueFontSize;
   grid_scale: number;
@@ -57,6 +59,7 @@ export const DEFAULT_SETTINGS: Settings = {
     suppress_disqualification_warnings: false,
   },
   appearance: {
+    theme: "system",
     highlight_color: "#3478F6",
     clue_font_size: "medium",
     grid_scale: 1,

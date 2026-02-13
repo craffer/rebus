@@ -20,7 +20,7 @@ export default function Timer() {
   return (
     <button
       onClick={() => (timerRunning ? pauseTimer() : resumeTimer())}
-      className="flex items-center gap-1 rounded px-2 py-1 text-sm font-mono text-gray-700 hover:bg-gray-100"
+      className="flex items-center gap-1 rounded px-2 py-1 text-sm font-mono text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
       title={timerRunning ? "Pause timer" : "Resume timer"}
     >
       <span>{timerRunning ? "\u23F1" : "\u23F8"}</span>

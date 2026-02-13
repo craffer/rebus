@@ -35,24 +35,23 @@ function getClassName(highlight: ClueHighlight, isComplete: boolean): string {
   const base = "cursor-pointer rounded px-2 py-1 text-sm";
 
   if (highlight === "primary") {
-    // Active clue you're typing into — strong blue bg, dark blue text
     const text = isComplete
-      ? "font-semibold text-gray-400"
-      : "font-semibold text-blue-800";
-    return `${base} bg-blue-100 ${text}`;
+      ? "font-semibold text-gray-400 dark:text-gray-500"
+      : "font-semibold text-blue-800 dark:text-blue-200";
+    return `${base} bg-blue-100 dark:bg-blue-800/40 ${text}`;
   }
 
   if (highlight === "cross") {
-    // Associated cross-direction clue — subtle blue bg
-    const text = isComplete ? "text-gray-400" : "text-gray-700";
-    return `${base} bg-blue-50 ${text}`;
+    const text = isComplete
+      ? "text-gray-400 dark:text-gray-500"
+      : "text-gray-700 dark:text-gray-300";
+    return `${base} bg-blue-50 dark:bg-blue-900/20 ${text}`;
   }
 
-  // Not highlighted
   if (isComplete) {
-    return `${base} text-gray-400 hover:bg-gray-100`;
+    return `${base} text-gray-400 hover:bg-gray-100 dark:text-gray-500 dark:hover:bg-gray-800`;
   }
-  return `${base} text-gray-800 hover:bg-gray-100`;
+  return `${base} text-gray-800 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-gray-800`;
 }
 
 interface ClueItemProps {
@@ -93,7 +92,9 @@ export default function ClueItem({
       onClick={() => onClick(clue)}
       className={getClassName(highlight, isComplete)}
     >
-      <span className="mr-1.5 font-medium text-gray-500">{clue.number}.</span>
+      <span className="mr-1.5 font-medium text-gray-500 dark:text-gray-400">
+        {clue.number}.
+      </span>
       {clue.text}
     </li>
   );

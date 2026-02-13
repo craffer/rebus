@@ -1,4 +1,5 @@
 import type { Puzzle, CursorPosition, Direction } from "../../types/puzzle";
+import type { ColorPalette } from "./constants";
 import {
   BORDER_WIDTH,
   CELL_BORDER_WIDTH,
@@ -29,6 +30,7 @@ export function renderGrid(
   state: GridRenderState,
   dpr: number,
   cellSize: number,
+  colors: ColorPalette = COLORS,
 ): void {
   const { puzzle, cursor, wordCells } = state;
   const { width, height, grid } = puzzle;
@@ -70,13 +72,13 @@ export function renderGrid(
 
       // Cell background
       if (cell.kind === "black") {
-        ctx.fillStyle = COLORS.blackCell;
+        ctx.fillStyle = colors.blackCell;
       } else if (row === cursor.row && col === cursor.col) {
-        ctx.fillStyle = COLORS.cursorCell;
+        ctx.fillStyle = colors.cursorCell;
       } else if (wordCellSet.has(`${row},${col}`)) {
-        ctx.fillStyle = COLORS.wordHighlight;
+        ctx.fillStyle = colors.wordHighlight;
       } else {
-        ctx.fillStyle = COLORS.cellBackground;
+        ctx.fillStyle = colors.cellBackground;
       }
       ctx.fillRect(x, y, cs, cs);
 
@@ -84,7 +86,7 @@ export function renderGrid(
 
       // Circle indicator
       if (cell.is_circled) {
-        ctx.strokeStyle = COLORS.circle;
+        ctx.strokeStyle = colors.circle;
         ctx.lineWidth = cellBorderWidth;
         ctx.beginPath();
         ctx.arc(
@@ -99,7 +101,7 @@ export function renderGrid(
 
       // Clue number
       if (cell.number !== null) {
-        ctx.fillStyle = COLORS.numberText;
+        ctx.fillStyle = colors.numberText;
         ctx.font = `${numberFontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
@@ -115,9 +117,9 @@ export function renderGrid(
         const isRebus = cell.player_value.length > 1;
         const fontSize = isRebus ? letterFontSize * 0.55 : letterFontSize;
 
-        ctx.fillStyle = COLORS.letterText;
-        if (cell.was_incorrect) ctx.fillStyle = COLORS.incorrect;
-        if (cell.is_revealed) ctx.fillStyle = COLORS.revealed;
+        ctx.fillStyle = colors.letterText;
+        if (cell.was_incorrect) ctx.fillStyle = colors.incorrect;
+        if (cell.is_revealed) ctx.fillStyle = colors.revealed;
 
         ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
         ctx.textAlign = "center";
@@ -132,7 +134,7 @@ export function renderGrid(
   }
 
   // Draw cell borders
-  ctx.strokeStyle = COLORS.cellBorder;
+  ctx.strokeStyle = colors.cellBorder;
   ctx.lineWidth = cellBorderWidth;
   for (let row = 0; row <= height; row++) {
     const y = borderWidth + row * cs;
@@ -150,7 +152,7 @@ export function renderGrid(
   }
 
   // Outer border (thicker)
-  ctx.strokeStyle = COLORS.gridBorder;
+  ctx.strokeStyle = colors.gridBorder;
   ctx.lineWidth = borderWidth;
   ctx.strokeRect(
     borderWidth / 2,

@@ -10,16 +10,22 @@ import {
   computeCellSize,
   type GridRenderState,
 } from "./GridRenderer";
+import { LIGHT_COLORS, DARK_COLORS } from "./constants";
+import { useIsDarkMode } from "../../hooks/useTheme";
 
 export default function Grid() {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const puzzle = usePuzzleStore((s) => s.puzzle);
   const [cellSize, setCellSize] = useState(36);
+  const isDark = useIsDarkMode();
+  const colors = isDark ? DARK_COLORS : LIGHT_COLORS;
 
-  // Track the current cellSize in a ref so the store subscription can read it
+  // Track current values in refs so the store subscription can read them
   const cellSizeRef = useRef(cellSize);
   cellSizeRef.current = cellSize;
+  const colorsRef = useRef(colors);
+  colorsRef.current = colors;
 
   // Observe container size and recompute cellSize
   useEffect(() => {
@@ -68,7 +74,7 @@ export default function Grid() {
       direction: state.direction,
       wordCells: selectCurrentWordCells(state),
     };
-    renderGrid(ctx, renderState, dpr, cellSize);
+    renderGrid(ctx, renderState, dpr, cellSize, colors);
 
     // Subscribe to store changes for re-rendering
     const unsub = usePuzzleStore.subscribe((s) => {
@@ -79,11 +85,11 @@ export default function Grid() {
         direction: s.direction,
         wordCells: selectCurrentWordCells(s),
       };
-      renderGrid(ctx, rs, dpr, cellSizeRef.current);
+      renderGrid(ctx, rs, dpr, cellSizeRef.current, colorsRef.current);
     });
 
     return unsub;
-  }, [puzzle, cellSize]);
+  }, [puzzle, cellSize, colors]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;

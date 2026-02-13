@@ -18,28 +18,48 @@ export const NUMBER_PADDING_RATIO = 0.03;
 /** Padding around the grid container in CSS pixels. */
 export const GRID_PADDING = 16;
 
-// Colors
-export const COLORS = {
-  /** Background of letter cells. */
+// Color palette type used by the canvas renderer
+export interface ColorPalette {
+  cellBackground: string;
+  blackCell: string;
+  gridBorder: string;
+  cellBorder: string;
+  cursorCell: string;
+  wordHighlight: string;
+  numberText: string;
+  letterText: string;
+  circle: string;
+  incorrect: string;
+  revealed: string;
+}
+
+export const LIGHT_COLORS: ColorPalette = {
   cellBackground: "#FFFFFF",
-  /** Background of black cells. */
   blackCell: "#000000",
-  /** Outer grid border. */
   gridBorder: "#000000",
-  /** Inner cell borders. */
   cellBorder: "#000000",
-  /** Active cell highlight. */
   cursorCell: "#FFDA00",
-  /** Current word highlight. */
   wordHighlight: "#A7D8FF",
-  /** Clue numbers in cells. */
   numberText: "#000000",
-  /** Letters typed by the player. */
   letterText: "#000000",
-  /** Circle indicator for circled cells. */
   circle: "#000000",
-  /** Incorrect answer indicator. */
   incorrect: "#FF0000",
-  /** Revealed cell indicator. */
   revealed: "#FF6B00",
-} as const;
+};
+
+export const DARK_COLORS: ColorPalette = {
+  cellBackground: "#2D2D2D",
+  blackCell: "#1A1A1A",
+  gridBorder: "#555555",
+  cellBorder: "#444444",
+  cursorCell: "#B8860B",
+  wordHighlight: "#1E3A5F",
+  numberText: "#CCCCCC",
+  letterText: "#E0E0E0",
+  circle: "#CCCCCC",
+  incorrect: "#FF4444",
+  revealed: "#FF8C42",
+};
+
+/** Default colors (light theme). */
+export const COLORS = LIGHT_COLORS;
