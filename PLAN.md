@@ -21,7 +21,7 @@ Build a native desktop crossword puzzle solving application from scratch. The go
 
 ### Rust Backend
 
-#### `crossword-parser` — Standalone Rust Crate (`crates/crossword-parser/`)
+#### `xword-parser` — Standalone Rust Crate (`crates/xword-parser/`)
 A reusable library crate, separate from the Tauri app, so it can be published to crates.io or used in other contexts (CLI tools, WASM, etc.).
 
 - **Unified `Puzzle` type**: All parsers produce the same output struct regardless of input format
@@ -39,7 +39,7 @@ A reusable library crate, separate from the Tauri app, so it can be published to
 - **Thorough unit tests**: Test against real puzzle files for each format, round-trip fidelity
 
 #### Tauri App (`src-tauri/`)
-- Depends on `crossword-parser` as a path dependency
+- Depends on `xword-parser` as a path dependency
 - **Tauri commands**: `open_puzzle(file_path)` dispatches to the right parser by extension, returns `Puzzle` JSON
 - Thin layer — parsing logic lives in the crate, not here
 
@@ -51,7 +51,7 @@ A reusable library crate, separate from the Tauri app, so it can be published to
 
 ### Data Flow
 ```
-File → Rust parser (crossword-parser crate) → Puzzle JSON → Tauri IPC → Zustand store → Canvas render
+File → Rust parser (xword-parser crate) → Puzzle JSON → Tauri IPC → Zustand store → Canvas render
                                                                                        → Clue panel
 User input → Keyboard handler → Zustand store → Canvas render (re-subscribes)
 ```
@@ -60,7 +60,7 @@ User input → Keyboard handler → Zustand store → Canvas render (re-subscrib
 ```
 rebus-2/
 ├── crates/
-│   └── crossword-parser/          # Standalone Rust crate
+│   └── xword-parser/          # Standalone Rust crate
 │       ├── src/
 │       │   ├── lib.rs             # Public API: parse(bytes, format) → Puzzle
 │       │   ├── types.rs           # Puzzle, Cell, Clue, CellKind structs
@@ -77,7 +77,7 @@ rebus-2/
 │   │   ├── main.rs
 │   │   ├── lib.rs                 # Tauri builder, plugin + command registration
 │   │   └── commands.rs            # open_puzzle, check, reveal commands
-│   └── Cargo.toml                 # depends on crossword-parser via path
+│   └── Cargo.toml                 # depends on xword-parser via path
 ├── src/                           # React frontend
 │   ├── main.tsx
 │   ├── App.tsx
@@ -185,7 +185,7 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - Initialize git repo
 - Ensure latest stable Rust (`rustup update stable`) and Node.js (v22 LTS)
 - Scaffold Tauri v2 + React + TypeScript project
-- Set up Cargo workspace with `crossword-parser` crate
+- Set up Cargo workspace with `xword-parser` crate
 - Install all deps (frontend + Rust + Tauri plugins)
 - Configure ESLint (flat config) + Prettier for TypeScript/React
 - Configure `rustfmt` + `clippy` for Rust
@@ -196,7 +196,7 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - **Commit plan as `PLAN.md` and create `CLAUDE.md`**
 
 ### Step 1: Crossword Parser Crate
-- Files: `crates/crossword-parser/src/{lib,types,puz,error}.rs`
+- Files: `crates/xword-parser/src/{lib,types,puz,error}.rs`
 - Implement `Puzzle`, `Cell`, `Clue` structs with serde
 - Implement .puz binary parser with full extension support (rebus, circles, timer)
 - Implement clue numbering algorithm
@@ -242,7 +242,7 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - Responsive canvas sizing (fit to available space)
 
 ### Step 8: Add .ipuz and .jpz Parsers
-- Files: `crates/crossword-parser/src/ipuz.rs`, `crates/crossword-parser/src/jpz.rs`
+- Files: `crates/xword-parser/src/ipuz.rs`, `crates/xword-parser/src/jpz.rs`
 - Parse to same unified `Puzzle` type
 - Unit tests with fixture files
 - `open_puzzle` command already dispatches by extension
@@ -260,7 +260,7 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - Puzzle statistics tracking (solve times, streaks)
 
 ## Verification
-1. `cargo test -p crossword-parser` — all parser tests pass
+1. `cargo test -p xword-parser` — all parser tests pass
 2. `npx vitest run` — all frontend tests pass
 3. Pre-commit hooks pass: `cargo fmt`, `clippy`, `eslint`, `prettier`
 4. `npm run tauri dev` — app launches with welcome screen

@@ -1,4 +1,4 @@
-use crossword_parser::Puzzle;
+use xword_parser::Puzzle;
 
 #[tauri::command]
 pub fn open_puzzle(file_path: String) -> Result<Puzzle, String> {
@@ -6,5 +6,5 @@ pub fn open_puzzle(file_path: String) -> Result<Puzzle, String> {
 
     let extension = file_path.rsplit('.').next().unwrap_or("");
 
-    crossword_parser::parse(&data, extension).map_err(|e| e.to_string())
+    xword_parser::parse(&data, extension).map_err(|e| e.to_string())
 }

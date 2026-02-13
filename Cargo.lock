@@ -550,19 +550,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d0a5c400df2834b80a4c3327b3aad3a4c4cd4de0629063962b03235697506a28"
 
 [[package]]
-name = "crossword-parser"
-version = "0.1.0"
-dependencies = [
- "byteorder",
- "encoding_rs",
- "pretty_assertions",
- "quick-xml 0.37.5",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "crypto-common"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2880,7 +2867,6 @@ checksum = "20675572f6f24e9e76ef639bc5552774ed45f1c30e2951e1e99c59888861c539"
 name = "rebus"
 version = "0.1.0"
 dependencies = [
- "crossword-parser",
  "serde",
  "serde_json",
  "tauri",
@@ -2888,6 +2874,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-fs",
  "tauri-plugin-opener",
+ "xword-parser",
 ]
 
 [[package]]
@@ -5217,6 +5204,19 @@ dependencies = [
  "libc",
  "once_cell",
  "pkg-config",
+]
+
+[[package]]
+name = "xword-parser"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "encoding_rs",
+ "pretty_assertions",
+ "quick-xml 0.37.5",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
 ]
 
 [[package]]

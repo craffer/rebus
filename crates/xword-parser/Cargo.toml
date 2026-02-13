@@ -1,5 +1,5 @@
 [package]
-name = "crossword-parser"
+name = "xword-parser"
 version = "0.1.0"
 edition = "2021"
 description = "A parser for crossword puzzle file formats (.puz, .ipuz, .jpz)"
