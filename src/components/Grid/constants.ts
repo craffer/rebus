@@ -1,5 +1,8 @@
-/** Base cell size in CSS pixels. Actual canvas pixels = CELL_SIZE * devicePixelRatio. */
-export const CELL_SIZE = 36;
+/** Minimum cell size in CSS pixels (used as a floor). */
+export const MIN_CELL_SIZE = 24;
+
+/** Maximum cell size in CSS pixels (used as a ceiling). */
+export const MAX_CELL_SIZE = 48;
 
 /** Thickness of the outer grid border in CSS pixels. */
 export const BORDER_WIDTH = 2;
@@ -7,14 +10,13 @@ export const BORDER_WIDTH = 2;
 /** Thickness of inner cell borders in CSS pixels. */
 export const CELL_BORDER_WIDTH = 1;
 
-/** Font size for clue numbers in the top-left of cells. */
-export const NUMBER_FONT_SIZE = 10;
+/** Font sizes and padding as ratios of cell size. */
+export const NUMBER_FONT_RATIO = 0.28;
+export const LETTER_FONT_RATIO = 0.56;
+export const NUMBER_PADDING_RATIO = 0.06;
 
-/** Font size for letters in cells. */
-export const LETTER_FONT_SIZE = 20;
-
-/** Padding from top-left corner for clue numbers. */
-export const NUMBER_PADDING = 2;
+/** Padding around the grid container in CSS pixels. */
+export const GRID_PADDING = 16;
 
 // Colors
 export const COLORS = {

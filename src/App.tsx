@@ -50,7 +50,7 @@ function App() {
       <Toolbar />
       <div className="flex min-h-0 flex-1">
         {/* Grid area */}
-        <div className="flex items-start justify-center overflow-auto p-4">
+        <div className="flex min-h-0 min-w-0 flex-1">
           <Grid />
         </div>
         {/* Clue panel */}

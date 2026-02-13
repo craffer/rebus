@@ -1,12 +1,14 @@
 import type { Puzzle, CursorPosition, Direction } from "../../types/puzzle";
 import {
-  CELL_SIZE,
   BORDER_WIDTH,
   CELL_BORDER_WIDTH,
-  NUMBER_FONT_SIZE,
-  LETTER_FONT_SIZE,
-  NUMBER_PADDING,
+  NUMBER_FONT_RATIO,
+  LETTER_FONT_RATIO,
+  NUMBER_PADDING_RATIO,
   COLORS,
+  MIN_CELL_SIZE,
+  MAX_CELL_SIZE,
+  GRID_PADDING,
 } from "./constants";
 
 export interface GridRenderState {
@@ -19,24 +21,27 @@ export interface GridRenderState {
 /**
  * Pure function that renders the entire crossword grid onto a canvas.
  * Called on every state change — fast enough at ~1ms per repaint.
+ *
+ * @param cellSize - The cell size in CSS pixels (computed by the container).
  */
 export function renderGrid(
   ctx: CanvasRenderingContext2D,
   state: GridRenderState,
   dpr: number,
+  cellSize: number,
 ): void {
   const { puzzle, cursor, wordCells } = state;
   const { width, height, grid } = puzzle;
 
-  const cellSize = CELL_SIZE * dpr;
+  const cs = cellSize * dpr;
   const borderWidth = BORDER_WIDTH * dpr;
   const cellBorderWidth = CELL_BORDER_WIDTH * dpr;
-  const numberFontSize = NUMBER_FONT_SIZE * dpr;
-  const letterFontSize = LETTER_FONT_SIZE * dpr;
-  const numberPadding = NUMBER_PADDING * dpr;
+  const numberFontSize = cellSize * NUMBER_FONT_RATIO * dpr;
+  const letterFontSize = cellSize * LETTER_FONT_RATIO * dpr;
+  const numberPadding = cellSize * NUMBER_PADDING_RATIO * dpr;
 
-  const totalWidth = width * cellSize + 2 * borderWidth;
-  const totalHeight = height * cellSize + 2 * borderWidth;
+  const totalWidth = width * cs + 2 * borderWidth;
+  const totalHeight = height * cs + 2 * borderWidth;
 
   // Clear
   ctx.clearRect(0, 0, totalWidth, totalHeight);
@@ -53,8 +58,8 @@ export function renderGrid(
   for (let row = 0; row < height; row++) {
     for (let col = 0; col < width; col++) {
       const cell = grid[row][col];
-      const x = borderWidth + col * cellSize;
-      const y = borderWidth + row * cellSize;
+      const x = borderWidth + col * cs;
+      const y = borderWidth + row * cs;
 
       // Cell background
       if (cell.kind === "black") {
@@ -66,7 +71,7 @@ export function renderGrid(
       } else {
         ctx.fillStyle = COLORS.cellBackground;
       }
-      ctx.fillRect(x, y, cellSize, cellSize);
+      ctx.fillRect(x, y, cs, cs);
 
       if (cell.kind === "black") continue;
 
@@ -76,9 +81,9 @@ export function renderGrid(
         ctx.lineWidth = cellBorderWidth;
         ctx.beginPath();
         ctx.arc(
-          x + cellSize / 2,
-          y + cellSize / 2,
-          cellSize / 2 - cellBorderWidth * 2,
+          x + cs / 2,
+          y + cs / 2,
+          cs / 2 - cellBorderWidth * 2,
           0,
           Math.PI * 2,
         );
@@ -112,8 +117,8 @@ export function renderGrid(
         ctx.textBaseline = "middle";
         ctx.fillText(
           cell.player_value.toUpperCase(),
-          x + cellSize / 2,
-          y + cellSize / 2 + (cell.number !== null ? numberFontSize * 0.3 : 0),
+          x + cs / 2,
+          y + cs / 2 + (cell.number !== null ? numberFontSize * 0.3 : 0),
         );
       }
     }
@@ -123,17 +128,17 @@ export function renderGrid(
   ctx.strokeStyle = COLORS.cellBorder;
   ctx.lineWidth = cellBorderWidth;
   for (let row = 0; row <= height; row++) {
-    const y = borderWidth + row * cellSize;
+    const y = borderWidth + row * cs;
     ctx.beginPath();
     ctx.moveTo(borderWidth, y);
-    ctx.lineTo(borderWidth + width * cellSize, y);
+    ctx.lineTo(borderWidth + width * cs, y);
     ctx.stroke();
   }
   for (let col = 0; col <= width; col++) {
-    const x = borderWidth + col * cellSize;
+    const x = borderWidth + col * cs;
     ctx.beginPath();
     ctx.moveTo(x, borderWidth);
-    ctx.lineTo(x, borderWidth + height * cellSize);
+    ctx.lineTo(x, borderWidth + height * cs);
     ctx.stroke();
   }
 
@@ -143,22 +148,25 @@ export function renderGrid(
   ctx.strokeRect(
     borderWidth / 2,
     borderWidth / 2,
-    width * cellSize + borderWidth,
-    height * cellSize + borderWidth,
+    width * cs + borderWidth,
+    height * cs + borderWidth,
   );
 }
 
 /**
  * Convert a mouse click position (in CSS pixels relative to canvas)
  * to a grid cell coordinate.
+ *
+ * @param cellSize - Must match the cellSize used for rendering.
  */
 export function hitTest(
   x: number,
   y: number,
   puzzle: Puzzle,
+  cellSize: number,
 ): CursorPosition | null {
-  const col = Math.floor((x - BORDER_WIDTH) / CELL_SIZE);
-  const row = Math.floor((y - BORDER_WIDTH) / CELL_SIZE);
+  const col = Math.floor((x - BORDER_WIDTH) / cellSize);
+  const row = Math.floor((y - BORDER_WIDTH) / cellSize);
 
   if (row < 0 || row >= puzzle.height || col < 0 || col >= puzzle.width) {
     return null;
@@ -171,13 +179,36 @@ export function hitTest(
   return { row, col };
 }
 
-/** Calculate the canvas dimensions in CSS pixels for a given puzzle. */
-export function getCanvasDimensions(puzzle: Puzzle): {
+/** Calculate the canvas dimensions in CSS pixels for a given puzzle and cell size. */
+export function getCanvasDimensions(
+  puzzle: Puzzle,
+  cellSize: number,
+): {
   width: number;
   height: number;
 } {
   return {
-    width: puzzle.width * CELL_SIZE + 2 * BORDER_WIDTH,
-    height: puzzle.height * CELL_SIZE + 2 * BORDER_WIDTH,
+    width: puzzle.width * cellSize + 2 * BORDER_WIDTH,
+    height: puzzle.height * cellSize + 2 * BORDER_WIDTH,
   };
+}
+
+/**
+ * Compute the optimal cell size to fit the puzzle within the available space.
+ * Returns a value clamped between MIN_CELL_SIZE and MAX_CELL_SIZE.
+ */
+export function computeCellSize(
+  containerWidth: number,
+  containerHeight: number,
+  gridCols: number,
+  gridRows: number,
+): number {
+  const availWidth = containerWidth - 2 * GRID_PADDING;
+  const availHeight = containerHeight - 2 * GRID_PADDING;
+
+  const maxByWidth = (availWidth - 2 * BORDER_WIDTH) / gridCols;
+  const maxByHeight = (availHeight - 2 * BORDER_WIDTH) / gridRows;
+
+  const cellSize = Math.floor(Math.min(maxByWidth, maxByHeight));
+  return Math.max(MIN_CELL_SIZE, Math.min(MAX_CELL_SIZE, cellSize));
 }

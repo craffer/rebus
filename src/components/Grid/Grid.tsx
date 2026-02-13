@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import {
   usePuzzleStore,
   selectCurrentWordCells,
@@ -7,14 +7,43 @@ import {
   renderGrid,
   hitTest,
   getCanvasDimensions,
+  computeCellSize,
   type GridRenderState,
 } from "./GridRenderer";
 
 export default function Grid() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const puzzle = usePuzzleStore((s) => s.puzzle);
+  const [cellSize, setCellSize] = useState(36);
 
-  // Subscribe to the store outside React for canvas rendering
+  // Track the current cellSize in a ref so the store subscription can read it
+  const cellSizeRef = useRef(cellSize);
+  cellSizeRef.current = cellSize;
+
+  // Observe container size and recompute cellSize
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || !puzzle) return;
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (!entry) return;
+      const { width, height } = entry.contentRect;
+      const newSize = computeCellSize(
+        width,
+        height,
+        puzzle.width,
+        puzzle.height,
+      );
+      setCellSize(newSize);
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, [puzzle]);
+
+  // Set up canvas and subscribe to store for rendering
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !puzzle) return;
@@ -23,7 +52,7 @@ export default function Grid() {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const dims = getCanvasDimensions(puzzle);
+    const dims = getCanvasDimensions(puzzle, cellSize);
 
     // Set canvas size for HiDPI
     canvas.width = dims.width * dpr;
@@ -31,7 +60,7 @@ export default function Grid() {
     canvas.style.width = `${dims.width}px`;
     canvas.style.height = `${dims.height}px`;
 
-    // Render immediately on mount
+    // Render immediately
     const state = usePuzzleStore.getState();
     const renderState: GridRenderState = {
       puzzle: state.puzzle!,
@@ -39,7 +68,7 @@ export default function Grid() {
       direction: state.direction,
       wordCells: selectCurrentWordCells(state),
     };
-    renderGrid(ctx, renderState, dpr);
+    renderGrid(ctx, renderState, dpr, cellSize);
 
     // Subscribe to store changes for re-rendering
     const unsub = usePuzzleStore.subscribe((s) => {
@@ -50,11 +79,11 @@ export default function Grid() {
         direction: s.direction,
         wordCells: selectCurrentWordCells(s),
       };
-      renderGrid(ctx, rs, dpr);
+      renderGrid(ctx, rs, dpr, cellSizeRef.current);
     });
 
     return unsub;
-  }, [puzzle]);
+  }, [puzzle, cellSize]);
 
   const handleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -65,7 +94,7 @@ export default function Grid() {
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
 
-    const cell = hitTest(x, y, state.puzzle);
+    const cell = hitTest(x, y, state.puzzle, cellSizeRef.current);
     if (!cell) return;
 
     // Click same cell → toggle direction
@@ -78,17 +107,14 @@ export default function Grid() {
 
   if (!puzzle) return null;
 
-  const dims = getCanvasDimensions(puzzle);
-
   return (
-    <canvas
-      ref={canvasRef}
-      width={dims.width}
-      height={dims.height}
-      style={{ width: dims.width, height: dims.height }}
-      onClick={handleClick}
-      className="cursor-pointer outline-none"
-      tabIndex={0}
-    />
+    <div ref={containerRef} className="flex flex-1 items-center justify-center">
+      <canvas
+        ref={canvasRef}
+        onClick={handleClick}
+        className="cursor-pointer outline-none"
+        tabIndex={0}
+      />
+    </div>
   );
 }
