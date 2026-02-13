@@ -98,6 +98,7 @@ const defaultNavSettings: NavigationSettings = {
   skip_filled: true,
   skip_penciled: true,
   end_of_word_action: "stop",
+  scroll_clue_to_top: true,
 };
 
 describe("isLetterCell", () => {
