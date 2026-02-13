@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { usePuzzleStore } from "./store/puzzleStore";
+import { useSettingsStore } from "./store/settingsStore";
 import { usePuzzleLoader } from "./hooks/usePuzzleLoader";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
 import { useTimer } from "./hooks/useTimer";
@@ -14,6 +15,11 @@ function App() {
 
   useKeyboardNavigation();
   useTimer();
+
+  // Load persisted settings from disk on app startup
+  useEffect(() => {
+    useSettingsStore.getState()._initSettings();
+  }, []);
 
   // Cmd+O / Ctrl+O to open a puzzle
   useEffect(() => {
