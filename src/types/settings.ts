@@ -15,6 +15,7 @@ export interface NavigationSettings {
   skip_filled: boolean;
   skip_penciled: boolean;
   end_of_word_action: EndOfWordAction;
+  scroll_clue_to_top: boolean;
 }
 
 export interface FeedbackSettings {
@@ -47,6 +48,7 @@ export const DEFAULT_SETTINGS: Settings = {
     skip_filled: true,
     skip_penciled: true,
     end_of_word_action: "stop",
+    scroll_clue_to_top: true,
   },
   feedback: {
     play_sound_on_solve: true,
