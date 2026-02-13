@@ -35,16 +35,16 @@ function getClassName(highlight: ClueHighlight, isComplete: boolean): string {
   const base = "cursor-pointer rounded px-2 py-1 text-sm";
 
   if (highlight === "primary") {
-    // Active clue you're typing into — strong blue bg, gray text if completed
+    // Active clue you're typing into — strong blue bg
     const text = isComplete
-      ? "text-blue-400 font-semibold"
-      : "font-semibold text-blue-900";
+      ? "font-semibold text-gray-500"
+      : "font-semibold text-gray-900";
     return `${base} bg-blue-100 ${text}`;
   }
 
   if (highlight === "cross") {
-    // Associated cross-direction clue — subtle blue bg, gray text if completed
-    const text = isComplete ? "text-blue-300" : "text-blue-800";
+    // Associated cross-direction clue — subtle blue bg
+    const text = isComplete ? "text-gray-400" : "text-gray-700";
     return `${base} bg-blue-50 ${text}`;
   }
 
