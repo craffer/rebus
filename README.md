@@ -1,4 +1,10 @@
-# Rebus
+<h1 align="center">
+  <br>
+  <img src="src-tauri/icons/128x128@2x.png" alt="Rebus icon" width="128" height="128">
+  <br>
+  Rebus
+  <br>
+</h1>
 
 A native desktop crossword puzzle solver. Opens `.puz` files and provides a smooth, speedy solving experience, with configurable navigation, dark mode, and more.
 
