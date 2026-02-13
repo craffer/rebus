@@ -29,6 +29,7 @@ export interface PuzzleState {
   resumeTimer: () => void;
   resetTimer: () => void;
   checkSolution: () => void;
+  resetPuzzle: () => void;
 }
 
 export const usePuzzleStore = create<PuzzleState>()(
@@ -142,6 +143,33 @@ export const usePuzzleStore = create<PuzzleState>()(
           state.timerRunning = false;
         });
       }
+    },
+
+    resetPuzzle: () => {
+      set((state) => {
+        if (!state.puzzle) return;
+        for (let r = 0; r < state.puzzle.height; r++) {
+          for (let c = 0; c < state.puzzle.width; c++) {
+            const cell = state.puzzle.grid[r][c];
+            if (cell.kind === "letter") {
+              cell.player_value = null;
+            }
+          }
+        }
+        // Move cursor to first letter cell
+        for (let r = 0; r < state.puzzle.height; r++) {
+          for (let c = 0; c < state.puzzle.width; c++) {
+            if (state.puzzle.grid[r][c].kind === "letter") {
+              state.cursor = { row: r, col: c };
+              state.direction = "across";
+              state.elapsedSeconds = 0;
+              state.timerRunning = true;
+              state.isSolved = false;
+              return;
+            }
+          }
+        }
+      });
     },
   })),
 );

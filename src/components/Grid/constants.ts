@@ -48,16 +48,16 @@ export const LIGHT_COLORS: ColorPalette = {
 };
 
 export const DARK_COLORS: ColorPalette = {
-  cellBackground: "#2D2D2D",
+  cellBackground: "#4A4A4A",
   blackCell: "#1A1A1A",
-  gridBorder: "#555555",
-  cellBorder: "#444444",
-  cursorCell: "#B8860B",
-  wordHighlight: "#1E3A5F",
-  numberText: "#CCCCCC",
-  letterText: "#E0E0E0",
-  circle: "#CCCCCC",
-  incorrect: "#FF4444",
+  gridBorder: "#333333",
+  cellBorder: "#333333",
+  cursorCell: "#C8A200",
+  wordHighlight: "#2A5080",
+  numberText: "#C0C0C0",
+  letterText: "#EDEDED",
+  circle: "#C0C0C0",
+  incorrect: "#FF5555",
   revealed: "#FF8C42",
 };
 
