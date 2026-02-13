@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from "react";
+import { error as logError } from "@tauri-apps/plugin-log";
 import {
   usePuzzleStore,
   selectCurrentWordCells,
@@ -55,7 +56,10 @@ export default function Grid() {
     if (!canvas || !puzzle) return;
 
     const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    if (!ctx) {
+      logError("Failed to get canvas 2d context");
+      return;
+    }
 
     const dpr = window.devicePixelRatio || 1;
     const dims = getCanvasDimensions(puzzle, cellSize);

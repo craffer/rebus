@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { info } from "@tauri-apps/plugin-log";
 import type {
   Puzzle,
   Cell,
@@ -148,6 +149,7 @@ export const usePuzzleStore = create<PuzzleState>()(
       }
 
       if (allCorrect) {
+        info(`Puzzle solved in ${get().elapsedSeconds}s`);
         set((state) => {
           state.isSolved = true;
           state.timerRunning = false;
@@ -166,6 +168,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     },
 
     resetPuzzle: () => {
+      info("Puzzle reset");
       set((state) => {
         if (!state.puzzle) return;
         for (let r = 0; r < state.puzzle.height; r++) {

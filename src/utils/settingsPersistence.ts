@@ -5,6 +5,7 @@ import {
   exists,
   BaseDirectory,
 } from "@tauri-apps/plugin-fs";
+import { warn, error } from "@tauri-apps/plugin-log";
 import type { Settings } from "../types/settings";
 import { DEFAULT_SETTINGS } from "../types/settings";
 
@@ -48,7 +49,7 @@ export async function loadSettings(): Promise<Settings> {
     const parsed = JSON.parse(raw);
     return deepMerge(DEFAULT_SETTINGS, parsed);
   } catch {
-    console.warn("Failed to load settings, using defaults");
+    warn("Failed to load settings, using defaults");
     return DEFAULT_SETTINGS;
   }
 }
@@ -60,7 +61,7 @@ export async function saveSettings(settings: Settings): Promise<void> {
       baseDir: BASE_DIR,
     });
   } catch (err) {
-    console.error("Failed to save settings:", err);
+    error(`Failed to save settings: ${err}`);
   }
 }
 

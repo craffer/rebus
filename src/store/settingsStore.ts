@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { immer } from "zustand/middleware/immer";
+import { info } from "@tauri-apps/plugin-log";
 import type { Settings } from "../types/settings";
 import { DEFAULT_SETTINGS } from "../types/settings";
 import { loadSettings, saveSettings } from "../utils/settingsPersistence";
@@ -25,6 +26,7 @@ export const useSettingsStore = create<SettingsState>()(
         state.settings = settings;
         state._loaded = true;
       });
+      info("Settings loaded");
     },
 
     updateNavigation: (updates) => {

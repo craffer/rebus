@@ -1,6 +1,7 @@
 import { useCallback, useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
+import { info, error as logError } from "@tauri-apps/plugin-log";
 import { usePuzzleStore } from "../store/puzzleStore";
 import type { Puzzle } from "../types/puzzle";
 
@@ -31,10 +32,11 @@ export function usePuzzleLoader() {
         filePath: filePath as string,
       });
       loadPuzzle(puzzle);
+      info(`Puzzle loaded: ${(filePath as string).split("/").pop()}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
-      console.error("Failed to open puzzle:", err);
+      logError(`Failed to open puzzle: ${message}`);
     } finally {
       setLoading(false);
     }
