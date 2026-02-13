@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <clipPath id="gridClip">
+      <rect x="36" y="36" width="440" height="440" rx="56" ry="56"/>
+    </clipPath>
+  </defs>
+
+  <!-- Grid background (shows through as grid lines between interior cells) -->
+  <rect x="36" y="36" width="440" height="440" rx="56" ry="56" fill="#000000"/>
+
+  <!-- Cells clipped to rounded grid shape -->
+  <!-- White edge cells are extended outward so no black line appears between them and the border -->
+  <g clip-path="url(#gridClip)">
+    <!-- Col positions: 38, 183, 328 -->
+    <!-- Row positions: 38, 183, 328 -->
+    <!-- Extend = push edge cells 20px past clip boundary -->
+
+    <!-- Row 1 -->
+    <!-- (0,0) BLACK — top+left edge, black matches background, no change -->
+    <rect x="16" y="16" width="164" height="164" fill="#000000"/>
+    <!-- (1,0) EMPTY — top edge: extend upward -->
+    <rect x="183" y="16" width="142" height="164" fill="#ffffff"/>
+    <text x="195" y="72" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="28" font-weight="500" fill="#aaaaaa">26</text>
+    <!-- (2,0) EMPTY — top+right edge: extend up and right -->
+    <rect x="328" y="16" width="170" height="164" fill="#ffffff"/>
+
+    <!-- Row 2 -->
+    <!-- (0,1) R — left edge: extend left -->
+    <rect x="16" y="183" width="164" height="142" fill="#ffffff"/>
+    <text x="50" y="217" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="26" font-weight="500" fill="#aaaaaa">30</text>
+    <text x="109" y="270" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="94" font-weight="600" fill="#000000" text-anchor="middle" dominant-baseline="central">R</text>
+
+    <!-- (1,1) E — interior, no extension needed -->
+    <rect x="183" y="183" width="142" height="142" fill="#ffffff"/>
+    <text x="254" y="270" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="94" font-weight="600" fill="#000000" text-anchor="middle" dominant-baseline="central">E</text>
+
+    <!-- (2,1) BUS — right edge: extend right -->
+    <rect x="328" y="183" width="170" height="142" fill="#ffffff"/>
+    <text x="402" y="270" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="50" font-weight="600" fill="#000000" text-anchor="middle" dominant-baseline="central">BUS</text>
+
+    <!-- Row 3 -->
+    <!-- (0,2) EMPTY — left+bottom edge: extend left and down -->
+    <rect x="16" y="328" width="164" height="170" fill="#ffffff"/>
+    <!-- (1,2) BLACK — bottom edge, black matches background -->
+    <rect x="183" y="328" width="142" height="170" fill="#000000"/>
+    <!-- (2,2) BLACK — bottom+right edge, black matches background -->
+    <rect x="328" y="328" width="170" height="170" fill="#000000"/>
+  </g>
+
+  <!-- Clean border on top -->
+  <rect x="36" y="36" width="440" height="440" rx="56" ry="56" fill="none" stroke="#4A90D9" stroke-width="6"/>
+</svg>
