@@ -5,6 +5,8 @@ interface ClueListProps {
   title: string;
   clues: Clue[];
   activeClueNumber: number | null;
+  completedClueNumbers: Set<number>;
+  scrollToTop: boolean;
   onClueClick: (clue: Clue, direction: Direction) => void;
   direction: Direction;
 }
@@ -13,6 +15,8 @@ export default function ClueList({
   title,
   clues,
   activeClueNumber,
+  completedClueNumbers,
+  scrollToTop,
   onClueClick,
   direction,
 }: ClueListProps) {
@@ -27,6 +31,8 @@ export default function ClueList({
             key={clue.number}
             clue={clue}
             isActive={activeClueNumber === clue.number}
+            isComplete={completedClueNumbers.has(clue.number)}
+            scrollToTop={scrollToTop}
             onClick={(c) => onClueClick(c, direction)}
           />
         ))}

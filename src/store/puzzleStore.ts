@@ -202,6 +202,21 @@ export function selectCurrentWordCells(
   return cells;
 }
 
+/** Check if all cells in a clue are filled (have a player_value). */
+export function isClueComplete(
+  puzzle: Puzzle,
+  clue: Clue,
+  direction: Direction,
+): boolean {
+  for (let i = 0; i < clue.length; i++) {
+    const r = direction === "across" ? clue.row : clue.row + i;
+    const c = direction === "across" ? clue.col + i : clue.col;
+    const cell = puzzle.grid[r][c];
+    if (!cell.player_value) return false;
+  }
+  return true;
+}
+
 /** Get the cross-direction clue at the current cursor position. */
 export function selectCrossClue(state: PuzzleState): Clue | null {
   if (!state.puzzle) return null;
