@@ -1,19 +1,25 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { usePuzzleStore } from "./store/puzzleStore";
 import { useSettingsStore } from "./store/settingsStore";
 import { usePuzzleLoader } from "./hooks/usePuzzleLoader";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
 import { useTimer } from "./hooks/useTimer";
 import { useIsDarkMode } from "./hooks/useTheme";
+import { playCelebrationSound } from "./utils/celebrationSound";
 import Grid from "./components/Grid/Grid";
 import CluePanel from "./components/CluePanel/CluePanel";
 import Toolbar from "./components/Toolbar";
 import WelcomeScreen from "./components/WelcomeScreen";
+import CompletionOverlay from "./components/CompletionOverlay";
 
 function App() {
   const puzzle = usePuzzleStore((s) => s.puzzle);
+  const isSolved = usePuzzleStore((s) => s.isSolved);
   const { openPuzzleFile } = usePuzzleLoader();
   const isDark = useIsDarkMode();
+
+  const [showCelebration, setShowCelebration] = useState(false);
+  const prevSolvedRef = useRef(false);
 
   useKeyboardNavigation();
   useTimer();
@@ -27,6 +33,19 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
+
+  // Celebration on solve (transition from false → true)
+  useEffect(() => {
+    if (isSolved && !prevSolvedRef.current) {
+      setShowCelebration(true);
+      const playSoundOnSolve =
+        useSettingsStore.getState().settings.feedback.play_sound_on_solve;
+      if (playSoundOnSolve) {
+        playCelebrationSound();
+      }
+    }
+    prevSolvedRef.current = isSolved;
+  }, [isSolved]);
 
   // Cmd+O / Ctrl+O to open a puzzle
   useEffect(() => {
@@ -49,6 +68,8 @@ function App() {
     }
   }, [puzzle?.title]);
 
+  const dismissCelebration = useCallback(() => setShowCelebration(false), []);
+
   if (!puzzle) {
     return (
       <div className="flex h-screen flex-col">
@@ -59,7 +80,6 @@ function App() {
   }
 
   const timerRunning = usePuzzleStore((s) => s.timerRunning);
-  const isSolved = usePuzzleStore((s) => s.isSolved);
   const isPaused = puzzle && !timerRunning && !isSolved;
 
   return (
@@ -89,6 +109,9 @@ function App() {
           <CluePanel />
         </div>
       </div>
+
+      {/* Completion celebration */}
+      {showCelebration && <CompletionOverlay onDismiss={dismissCelebration} />}
     </div>
   );
 }
