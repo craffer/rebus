@@ -17,6 +17,8 @@ export interface PuzzleState {
   timerRunning: boolean;
   /** Whether the puzzle has been completed correctly. */
   isSolved: boolean;
+  /** Whether every cell is filled but the solution is incorrect. */
+  showIncorrectNotice: boolean;
 
   // Actions
   loadPuzzle: (puzzle: Puzzle) => void;
@@ -29,6 +31,7 @@ export interface PuzzleState {
   resumeTimer: () => void;
   resetTimer: () => void;
   checkSolution: () => void;
+  dismissIncorrectNotice: () => void;
   resetPuzzle: () => void;
 }
 
@@ -40,6 +43,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     elapsedSeconds: 0,
     timerRunning: false,
     isSolved: false,
+    showIncorrectNotice: false,
 
     loadPuzzle: (puzzle: Puzzle) => {
       // Find the first letter cell for initial cursor
@@ -62,6 +66,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         state.elapsedSeconds = 0;
         state.timerRunning = true;
         state.isSolved = false;
+        state.showIncorrectNotice = false;
       });
     },
 
@@ -122,19 +127,24 @@ export const usePuzzleStore = create<PuzzleState>()(
       const { puzzle } = get();
       if (!puzzle || !puzzle.has_solution) return;
 
+      let allFilled = true;
       let allCorrect = true;
       for (let r = 0; r < puzzle.height; r++) {
         for (let c = 0; c < puzzle.width; c++) {
           const cell = puzzle.grid[r][c];
           if (cell.kind === "black") continue;
-          const expected = cell.solution?.toUpperCase() ?? "";
           const actual = cell.player_value?.toUpperCase() ?? "";
-          if (actual !== expected) {
+          if (!actual) {
+            allFilled = false;
             allCorrect = false;
             break;
           }
+          const expected = cell.solution?.toUpperCase() ?? "";
+          if (actual !== expected) {
+            allCorrect = false;
+          }
         }
-        if (!allCorrect) break;
+        if (!allFilled) break;
       }
 
       if (allCorrect) {
@@ -142,7 +152,17 @@ export const usePuzzleStore = create<PuzzleState>()(
           state.isSolved = true;
           state.timerRunning = false;
         });
+      } else if (allFilled) {
+        set((state) => {
+          state.showIncorrectNotice = true;
+        });
       }
+    },
+
+    dismissIncorrectNotice: () => {
+      set((state) => {
+        state.showIncorrectNotice = false;
+      });
     },
 
     resetPuzzle: () => {
@@ -165,6 +185,7 @@ export const usePuzzleStore = create<PuzzleState>()(
               state.elapsedSeconds = 0;
               state.timerRunning = true;
               state.isSolved = false;
+              state.showIncorrectNotice = false;
               return;
             }
           }

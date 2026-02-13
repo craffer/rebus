@@ -16,6 +16,7 @@ import SettingsPanel from "./components/SettingsPanel";
 function App() {
   const puzzle = usePuzzleStore((s) => s.puzzle);
   const isSolved = usePuzzleStore((s) => s.isSolved);
+  const showIncorrectNotice = usePuzzleStore((s) => s.showIncorrectNotice);
   const { openPuzzleFile } = usePuzzleLoader();
   const isDark = useIsDarkMode();
 
@@ -118,6 +119,42 @@ function App() {
           <CluePanel />
         </div>
       </div>
+
+      {/* Incorrect notice */}
+      {showIncorrectNotice && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center"
+          onClick={() => usePuzzleStore.getState().dismissIncorrectNotice()}
+        >
+          <div
+            className="relative rounded-xl bg-white/90 px-8 py-6 shadow-2xl dark:bg-gray-800/90"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => usePuzzleStore.getState().dismissIncorrectNotice()}
+              className="absolute right-3 top-3 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-300"
+              aria-label="Close"
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 4l8 8M12 4L4 12" />
+              </svg>
+            </button>
+            <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Not quite...
+            </p>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+              Some answers are incorrect. Keep trying!
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Completion celebration */}
       {showCelebration && <CompletionOverlay onDismiss={dismissCelebration} />}
