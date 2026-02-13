@@ -101,6 +101,7 @@ User input → Keyboard handler → Zustand store → Canvas render
 ## Conventions
 
 - **Commit early and often** — make small, focused commits after each meaningful change
+- **Do not push** to the Git remotes without explicit instructions to do so from the user.
 - **Use latest stable versions** of all tools and frameworks
 - **Write tests** — unit tests for Rust (`cargo test`), Vitest for frontend. Each new feature should be tested.
 - **Run linters before committing** — pre-commit hooks enforce this, but run manually too
