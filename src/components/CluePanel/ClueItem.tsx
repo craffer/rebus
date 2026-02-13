@@ -1,6 +1,35 @@
 import { useRef, useEffect } from "react";
 import type { Clue } from "../../types/puzzle";
 
+const SCROLL_DURATION_MS = 400;
+
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+}
+
+/** Smoothly scroll a container so `targetTop` is at the top, over `duration` ms. */
+function smoothScrollTo(container: Element, targetTop: number) {
+  const start = container.scrollTop;
+  const distance = targetTop - start;
+  if (Math.abs(distance) < 1) return;
+
+  let startTime: number | null = null;
+
+  function step(timestamp: number) {
+    if (!startTime) startTime = timestamp;
+    const elapsed = timestamp - startTime;
+    const progress = Math.min(elapsed / SCROLL_DURATION_MS, 1);
+
+    container.scrollTop = start + distance * easeInOutCubic(progress);
+
+    if (progress < 1) {
+      requestAnimationFrame(step);
+    }
+  }
+
+  requestAnimationFrame(step);
+}
+
 interface ClueItemProps {
   clue: Clue;
   isActive: boolean;
@@ -23,13 +52,9 @@ export default function ClueItem({
     if (!isActive || !ref.current) return;
 
     if (scrollToTop) {
-      // Scroll so this item is at the top of the scrollable parent
       const parent = ref.current.closest("ol");
       if (parent) {
-        parent.scrollTo({
-          top: ref.current.offsetTop - parent.offsetTop,
-          behavior: "smooth",
-        });
+        smoothScrollTo(parent, ref.current.offsetTop - parent.offsetTop);
       }
     } else {
       ref.current.scrollIntoView({ block: "nearest", behavior: "smooth" });

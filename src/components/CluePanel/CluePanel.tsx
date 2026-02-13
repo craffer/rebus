@@ -14,6 +14,9 @@ export default function CluePanel() {
   const direction = usePuzzleStore((s) => s.direction);
   const currentClue = usePuzzleStore(selectCurrentClue);
   const crossClue = usePuzzleStore(selectCrossClue);
+  const timerRunning = usePuzzleStore((s) => s.timerRunning);
+  const isSolved = usePuzzleStore((s) => s.isSolved);
+  const isPaused = !!puzzle && !timerRunning && !isSolved;
 
   const scrollToTop = useSettingsStore(
     (s) => s.settings.navigation.scroll_clue_to_top,
@@ -54,6 +57,14 @@ export default function CluePanel() {
     direction === "down"
       ? (currentClue?.number ?? null)
       : (crossClue?.number ?? null);
+
+  if (isPaused) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col items-center justify-center text-gray-400">
+        <p className="text-sm">Clues hidden while paused</p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
