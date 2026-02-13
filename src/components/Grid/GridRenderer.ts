@@ -40,6 +40,13 @@ export function renderGrid(
   const letterFontSize = cellSize * LETTER_FONT_RATIO * dpr;
   const numberPadding = cellSize * NUMBER_PADDING_RATIO * dpr;
 
+  // Cell is split into a number strip at the top and a letter zone below.
+  // The number strip height is the number font size + padding above and below.
+  const numberStripHeight = numberFontSize + numberPadding * 2;
+  // The letter zone is the remaining space below the number strip.
+  const letterZoneTop = numberStripHeight;
+  const letterZoneCenterY = letterZoneTop + (cs - letterZoneTop) / 2;
+
   const totalWidth = width * cs + 2 * borderWidth;
   const totalHeight = height * cs + 2 * borderWidth;
 
@@ -118,7 +125,7 @@ export function renderGrid(
         ctx.fillText(
           cell.player_value.toUpperCase(),
           x + cs / 2,
-          y + cs / 2 + (cell.number !== null ? numberFontSize * 0.3 : 0),
+          y + letterZoneCenterY,
         );
       }
     }

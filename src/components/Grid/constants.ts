@@ -11,9 +11,9 @@ export const BORDER_WIDTH = 2;
 export const CELL_BORDER_WIDTH = 1;
 
 /** Font sizes and padding as ratios of cell size. */
-export const NUMBER_FONT_RATIO = 0.28;
-export const LETTER_FONT_RATIO = 0.56;
-export const NUMBER_PADDING_RATIO = 0.06;
+export const NUMBER_FONT_RATIO = 0.25;
+export const LETTER_FONT_RATIO = 0.64;
+export const NUMBER_PADDING_RATIO = 0.03;
 
 /** Padding around the grid container in CSS pixels. */
 export const GRID_PADDING = 16;
