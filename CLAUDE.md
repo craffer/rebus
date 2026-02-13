@@ -102,7 +102,7 @@ User input → Keyboard handler → Zustand store → Canvas render
 
 - **Commit early and often** — make small, focused commits after each meaningful change
 - **Use latest stable versions** of all tools and frameworks
-- **Write tests** — unit tests for Rust (`cargo test`), Vitest for frontend
+- **Write tests** — unit tests for Rust (`cargo test`), Vitest for frontend. Each new feature should be tested.
 - **Run linters before committing** — pre-commit hooks enforce this, but run manually too
 - Rust: `cargo fmt` + `cargo clippy --workspace` must pass with no warnings
 - TypeScript: ESLint flat config + Prettier, strict mode
