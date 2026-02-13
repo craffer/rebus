@@ -181,71 +181,71 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 
 ## Phase 1: Working Prototype
 
-### Step 0: Repo Setup & Tooling
-- Initialize git repo
-- Ensure latest stable Rust (`rustup update stable`) and Node.js (v22 LTS)
-- Scaffold Tauri v2 + React + TypeScript project
-- Set up Cargo workspace with `xword-parser` crate
-- Install all deps (frontend + Rust + Tauri plugins)
-- Configure ESLint (flat config) + Prettier for TypeScript/React
-- Configure `rustfmt` + `clippy` for Rust
-- Set up pre-commit hooks (via `pre-commit` or `husky` + `lint-staged`):
-  - `prettier --check` + `eslint` on staged .ts/.tsx files
-  - `cargo fmt --check` + `cargo clippy` on staged .rs files
-- Verify `npm run tauri dev` launches an empty window
-- **Commit plan as `PLAN.md` and create `CLAUDE.md`**
+### Step 0: Repo Setup & Tooling ✅
+- [x] Initialize git repo
+- [x] Ensure latest stable Rust (`rustup update stable`) and Node.js (v22 LTS)
+- [x] Scaffold Tauri v2 + React + TypeScript project
+- [x] Set up Cargo workspace with `xword-parser` crate
+- [x] Install all deps (frontend + Rust + Tauri plugins)
+- [x] Configure ESLint (flat config) + Prettier for TypeScript/React
+- [x] Configure `rustfmt` + `clippy` for Rust
+- [x] Set up pre-commit hooks (via `pre-commit` or `husky` + `lint-staged`):
+  - [x] `prettier --check` + `eslint` on staged .ts/.tsx files
+  - [x] `cargo fmt --check` + `cargo clippy` on staged .rs files
+- [x] Verify `npm run tauri dev` launches an empty window
+- [x] **Commit plan as `PLAN.md` and create `CLAUDE.md`**
 
-### Step 1: Crossword Parser Crate
-- Files: `crates/xword-parser/src/{lib,types,puz,error}.rs`
-- Implement `Puzzle`, `Cell`, `Clue` structs with serde
-- Implement .puz binary parser with full extension support (rebus, circles, timer)
-- Implement clue numbering algorithm
-- Unit tests against real .puz fixture files
-- Wire up in `src-tauri/` — register `open_puzzle` Tauri command
+### Step 1: Crossword Parser Crate ✅
+- [x] Files: `crates/xword-parser/src/{lib,types,puz,error}.rs`
+- [x] Implement `Puzzle`, `Cell`, `Clue` structs with serde
+- [x] Implement .puz binary parser with full extension support (rebus, circles, timer)
+- [x] Implement clue numbering algorithm
+- [x] Unit tests against real .puz fixture files
+- [x] Wire up in `src-tauri/` — register `open_puzzle` Tauri command
 
-### Step 2: Canvas Grid Rendering
-- Files: `src/components/Grid/GridRenderer.ts`, `Grid.tsx`, `constants.ts`
-- Pure canvas drawing: black cells, borders, numbers, letters, highlights
-- HiDPI support (devicePixelRatio scaling)
-- Mouse click → grid coordinates → store update
-- Current cell (dark blue) and current word (light blue) highlighting
+### Step 2: Canvas Grid Rendering ✅
+- [x] Files: `src/components/Grid/GridRenderer.ts`, `Grid.tsx`, `constants.ts`
+- [x] Pure canvas drawing: black cells, borders, numbers, letters, highlights
+- [x] HiDPI support (devicePixelRatio scaling)
+- [x] Mouse click → grid coordinates → store update
+- [x] Current cell (yellow) and current word (light blue) highlighting
 
-### Step 3: State Management
-- Files: `src/store/puzzleStore.ts`, `src/store/selectors.ts`, `src/utils/gridNavigation.ts`
-- Puzzle state, cursor, direction, cell values
-- Selectors: current clue, highlighted cells, completion check
-- Navigation utilities (next cell, word boundaries, wrapping)
+### Step 3: State Management ✅
+- [x] Files: `src/store/puzzleStore.ts`, `src/store/selectors.ts`, `src/utils/gridNavigation.ts`
+- [x] Puzzle state, cursor, direction, cell values
+- [x] Selectors: current clue, highlighted cells, completion check
+- [x] Navigation utilities (next cell, word boundaries, wrapping)
 
-### Step 4: Clue Panel
-- Files: `src/components/CluePanel/CluePanel.tsx`, `ClueList.tsx`, `ClueItem.tsx`
-- Two-column Across/Down layout
-- Auto-scroll to active clue
-- Click clue → navigate to word
+### Step 4: Clue Panel ✅
+- [x] Files: `src/components/CluePanel/CluePanel.tsx`, `ClueList.tsx`, `ClueItem.tsx`
+- [x] Two-column Across/Down layout
+- [x] Auto-scroll to active clue
+- [x] Click clue → navigate to word
 
-### Step 5: Keyboard Navigation + Settings
-- Files: `src/hooks/useKeyboardNavigation.ts`, `src/store/settingsStore.ts`, `src/types/settings.ts`
-- Define all settings types and defaults (matching NYT defaults from table above)
-- Settings store with persistence (read/write JSON to Tauri app data dir)
-- All navigation behavior reads from settings store
-- Unit tests for navigation logic (`gridNavigation.ts`)
+### Step 5: Keyboard Navigation + Settings ✅
+- [x] Files: `src/hooks/useKeyboardNavigation.ts`, `src/store/settingsStore.ts`, `src/types/settings.ts`
+- [x] Define all settings types and defaults (matching NYT defaults from table above)
+- [ ] Settings store with persistence (read/write JSON to Tauri app data dir)
+- [x] All navigation behavior reads from settings store
+- [x] Unit tests for navigation logic (`gridNavigation.ts`) — 24 tests passing
 
-### Step 6: File Opening Flow
-- Cmd+O → native file picker (Tauri dialog plugin, filtered to .puz/.ipuz/.jpz)
-- Invoke `open_puzzle` → populate store → render
-- Welcome screen when no puzzle loaded
+### Step 6: File Opening Flow ✅
+- [x] Cmd+O → native file picker (Tauri dialog plugin, filtered to .puz/.ipuz/.jpz)
+- [x] Invoke `open_puzzle` → populate store → render
+- [x] Welcome screen when no puzzle loaded
 
-### Step 7: Polish
-- Timer display
-- Window title = puzzle title
-- Toolbar with metadata (title, author)
-- Clean theme: white grid, blue highlights, system fonts
-- Responsive canvas sizing (fit to available space)
+### Step 7: Polish ✅
+- [x] Timer display
+- [x] Window title = puzzle title
+- [x] Toolbar with metadata (title, author)
+- [x] Clean theme: white grid, blue highlights, system fonts
+- [x] Responsive canvas sizing (fit to available space)
 
 ### Step 8: Add .ipuz and .jpz Parsers
 - Files: `crates/xword-parser/src/ipuz.rs`, `crates/xword-parser/src/jpz.rs`
-- Parse to same unified `Puzzle` type
-- Unit tests with fixture files
-- `open_puzzle` command already dispatches by extension
+- [ ] Parse to same unified `Puzzle` type
+- [ ] Unit tests with fixture files
+- [x] `open_puzzle` command already dispatches by extension
 
 ## Phase 2 (Future)
 - Check/reveal (per-cell, per-word, full puzzle)
