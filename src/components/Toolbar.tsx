@@ -2,7 +2,11 @@ import { usePuzzleStore } from "../store/puzzleStore";
 import { usePuzzleLoader } from "../hooks/usePuzzleLoader";
 import Timer from "./Timer";
 
-export default function Toolbar() {
+interface ToolbarProps {
+  onOpenSettings?: () => void;
+}
+
+export default function Toolbar({ onOpenSettings }: ToolbarProps) {
   const puzzle = usePuzzleStore((s) => s.puzzle);
   const isSolved = usePuzzleStore((s) => s.isSolved);
   const { openPuzzleFile } = usePuzzleLoader();
@@ -36,6 +40,21 @@ export default function Toolbar() {
           </span>
         )}
         <Timer />
+        {onOpenSettings && (
+          <button
+            onClick={onOpenSettings}
+            className="rounded p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            title="Settings"
+          >
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M8.34 1.804A1 1 0 019.32 1h1.36a1 1 0 01.98.804l.295 1.473c.497.191.96.44 1.382.738l1.394-.56a1 1 0 011.176.392l.68 1.178a1 1 0 01-.196 1.196l-1.1.914c.05.26.076.527.076.8s-.026.54-.076.8l1.1.914a1 1 0 01.196 1.196l-.68 1.178a1 1 0 01-1.176.392l-1.394-.56c-.422.299-.885.547-1.382.738l-.295 1.473a1 1 0 01-.98.804H9.32a1 1 0 01-.98-.804l-.295-1.473a5.961 5.961 0 01-1.382-.738l-1.394.56a1 1 0 01-1.176-.392l-.68-1.178a1 1 0 01.196-1.196l1.1-.914A5.967 5.967 0 014.633 10c0-.273.026-.54.076-.8l-1.1-.914a1 1 0 01-.196-1.196l.68-1.178a1 1 0 011.176-.392l1.394.56c.422-.299.885-.547 1.382-.738l.295-1.473zM10 13a3 3 0 100-6 3 3 0 000 6z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        )}
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import CluePanel from "./components/CluePanel/CluePanel";
 import Toolbar from "./components/Toolbar";
 import WelcomeScreen from "./components/WelcomeScreen";
 import CompletionOverlay from "./components/CompletionOverlay";
+import SettingsPanel from "./components/SettingsPanel";
 
 function App() {
   const puzzle = usePuzzleStore((s) => s.puzzle);
@@ -19,6 +20,7 @@ function App() {
   const isDark = useIsDarkMode();
 
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const prevSolvedRef = useRef(false);
 
   useKeyboardNavigation();
@@ -47,12 +49,16 @@ function App() {
     prevSolvedRef.current = isSolved;
   }, [isSolved]);
 
-  // Cmd+O / Ctrl+O to open a puzzle
+  // Cmd+O / Ctrl+O to open a puzzle, Cmd+, to open settings
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "o") {
         e.preventDefault();
         openPuzzleFile();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === ",") {
+        e.preventDefault();
+        setShowSettings((v) => !v);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -69,12 +75,15 @@ function App() {
   }, [puzzle?.title]);
 
   const dismissCelebration = useCallback(() => setShowCelebration(false), []);
+  const openSettings = useCallback(() => setShowSettings(true), []);
+  const closeSettings = useCallback(() => setShowSettings(false), []);
 
   if (!puzzle) {
     return (
       <div className="flex h-screen flex-col">
-        <Toolbar />
+        <Toolbar onOpenSettings={openSettings} />
         <WelcomeScreen />
+        {showSettings && <SettingsPanel onClose={closeSettings} />}
       </div>
     );
   }
@@ -84,7 +93,7 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-gray-900">
-      <Toolbar />
+      <Toolbar onOpenSettings={openSettings} />
       <div className="flex min-h-0 flex-1">
         {/* Grid area */}
         <div className="relative flex min-h-0 min-w-0 flex-1">
@@ -112,6 +121,9 @@ function App() {
 
       {/* Completion celebration */}
       {showCelebration && <CompletionOverlay onDismiss={dismissCelebration} />}
+
+      {/* Settings modal */}
+      {showSettings && <SettingsPanel onClose={closeSettings} />}
     </div>
   );
 }
