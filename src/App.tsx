@@ -17,6 +17,7 @@ function App() {
   const puzzle = usePuzzleStore((s) => s.puzzle);
   const isSolved = usePuzzleStore((s) => s.isSolved);
   const showIncorrectNotice = usePuzzleStore((s) => s.showIncorrectNotice);
+  const timerRunning = usePuzzleStore((s) => s.timerRunning);
   const { openPuzzleFile } = usePuzzleLoader();
   const isDark = useIsDarkMode();
 
@@ -89,7 +90,6 @@ function App() {
     );
   }
 
-  const timerRunning = usePuzzleStore((s) => s.timerRunning);
   const isPaused = puzzle && !timerRunning && !isSolved;
 
   return (
