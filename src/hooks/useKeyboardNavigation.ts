@@ -25,6 +25,9 @@ export function useKeyboardNavigation() {
       const { puzzle, cursor, direction } = state;
       if (!puzzle || state.isSolved) return;
 
+      // Block all puzzle input when timer is paused
+      if (!state.timerRunning) return;
+
       const settings = useSettingsStore.getState().settings.navigation;
 
       switch (e.key) {
@@ -45,6 +48,26 @@ export function useKeyboardNavigation() {
           const { clue: targetClue, direction: targetDir } = e.shiftKey
             ? getPreviousClue(puzzle, direction, currentClue)
             : getNextClue(puzzle, direction, currentClue);
+
+          const blank = getFirstBlankInWord(puzzle, targetClue, targetDir);
+          state.setCursor(
+            blank?.row ?? targetClue.row,
+            blank?.col ?? targetClue.col,
+          );
+          state.setDirection(targetDir);
+          break;
+        }
+
+        case "Enter": {
+          e.preventDefault();
+          const currentClue = selectCurrentClue(state);
+          if (!currentClue) break;
+
+          const { clue: targetClue, direction: targetDir } = getNextClue(
+            puzzle,
+            direction,
+            currentClue,
+          );
 
           const blank = getFirstBlankInWord(puzzle, targetClue, targetDir);
           state.setCursor(
