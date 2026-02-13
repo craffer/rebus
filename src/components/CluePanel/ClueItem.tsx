@@ -35,10 +35,10 @@ function getClassName(highlight: ClueHighlight, isComplete: boolean): string {
   const base = "cursor-pointer rounded px-2 py-1 text-sm";
 
   if (highlight === "primary") {
-    // Active clue you're typing into — strong blue bg
+    // Active clue you're typing into — strong blue bg, dark blue text
     const text = isComplete
-      ? "font-semibold text-gray-500"
-      : "font-semibold text-gray-900";
+      ? "font-semibold text-gray-400"
+      : "font-semibold text-blue-800";
     return `${base} bg-blue-100 ${text}`;
   }
 

@@ -52,27 +52,29 @@ function App() {
   return (
     <div className="flex h-screen flex-col bg-white">
       <Toolbar />
-      <div className="relative flex min-h-0 flex-1">
+      <div className="flex min-h-0 flex-1">
         {/* Grid area */}
-        <div className="flex min-h-0 min-w-0 flex-1">
+        <div className="relative flex min-h-0 min-w-0 flex-1">
           <Grid />
+          {/* Pause overlay — covers grid only */}
+          {isPaused && (
+            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95">
+              <p className="mb-4 text-2xl font-semibold text-gray-700">
+                Paused
+              </p>
+              <button
+                onClick={() => usePuzzleStore.getState().resumeTimer()}
+                className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Resume
+              </button>
+            </div>
+          )}
         </div>
         {/* Clue panel */}
         <div className="flex w-80 min-w-64 flex-col border-l border-gray-200">
           <CluePanel />
         </div>
-        {/* Pause overlay */}
-        {isPaused && (
-          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/95">
-            <p className="mb-4 text-2xl font-semibold text-gray-700">Paused</p>
-            <button
-              onClick={() => usePuzzleStore.getState().resumeTimer()}
-              className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              Resume
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );
