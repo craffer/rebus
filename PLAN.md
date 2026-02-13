@@ -241,6 +241,18 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - [x] Clean theme: white grid, blue highlights, system fonts
 - [x] Responsive canvas sizing (fit to available space)
 
+### Step 7.5: NYT Parity Features ✅
+- [x] Completed clues grayed out in clue panel (`isClueComplete` selector in `puzzleStore.ts`)
+- [x] Primary vs cross clue visual distinction (primary: `bg-blue-100`, cross: `bg-blue-50`)
+- [x] Completed clues stay grayed even when highlighted
+- [x] Enter key advances to next clue (same as Tab without Shift)
+- [x] Clue list auto-scrolls selected clue to top (configurable via `scroll_clue_to_top` setting)
+- [x] Custom smooth scroll animation (400ms ease-in-out cubic, NYT-like feel)
+- [x] Pause overlay covers grid with "Paused" + Resume button (`bg-white/95`)
+- [x] Keyboard input blocked when paused
+- [x] Redacted clue list during pause (clue numbers visible, text replaced with gray bars)
+- [x] Tests: 10 new tests in `puzzleStore.test.ts` (isClueComplete + pause behavior)
+
 ### Step 8: Add .ipuz and .jpz Parsers
 - Files: `crates/xword-parser/src/ipuz.rs`, `crates/xword-parser/src/jpz.rs`
 - [ ] Parse to same unified `Puzzle` type
