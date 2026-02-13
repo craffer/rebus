@@ -15,27 +15,23 @@ const BASE_DIR = BaseDirectory.AppConfig;
  * Deep-merge saved settings with defaults so that new keys added in future
  * versions get their default values filled in automatically.
  */
-function deepMerge<T extends Record<string, unknown>>(
-  defaults: T,
-  saved: Partial<T>,
-): T {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function deepMerge<T extends object>(defaults: T, saved: any): T {
   const result = { ...defaults };
   for (const key of Object.keys(defaults) as (keyof T)[]) {
     const savedVal = saved[key];
     if (savedVal === undefined) continue;
 
+    const defaultVal = defaults[key];
     if (
-      typeof defaults[key] === "object" &&
-      defaults[key] !== null &&
-      !Array.isArray(defaults[key]) &&
+      typeof defaultVal === "object" &&
+      defaultVal !== null &&
+      !Array.isArray(defaultVal) &&
       typeof savedVal === "object" &&
       savedVal !== null &&
       !Array.isArray(savedVal)
     ) {
-      result[key] = deepMerge(
-        defaults[key] as Record<string, unknown>,
-        savedVal as Record<string, unknown>,
-      ) as T[keyof T];
+      result[key] = deepMerge(defaultVal as object, savedVal) as T[keyof T];
     } else {
       result[key] = savedVal as T[keyof T];
     }
@@ -49,7 +45,7 @@ export async function loadSettings(): Promise<Settings> {
     if (!fileExists) return DEFAULT_SETTINGS;
 
     const raw = await readTextFile(SETTINGS_FILE, { baseDir: BASE_DIR });
-    const parsed = JSON.parse(raw) as Partial<Settings>;
+    const parsed = JSON.parse(raw);
     return deepMerge(DEFAULT_SETTINGS, parsed);
   } catch {
     console.warn("Failed to load settings, using defaults");
