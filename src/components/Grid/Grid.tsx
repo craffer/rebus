@@ -78,6 +78,7 @@ export default function Grid() {
       direction: state.direction,
       wordCells: selectCurrentWordCells(state),
       pencilCells: state.pencilCells,
+      isRebusMode: state.isRebusMode,
     };
     renderGrid(ctx, renderState, dpr, cellSize, colors);
 
@@ -90,6 +91,7 @@ export default function Grid() {
         direction: s.direction,
         wordCells: selectCurrentWordCells(s),
         pencilCells: s.pencilCells,
+        isRebusMode: s.isRebusMode,
       };
       renderGrid(ctx, rs, dpr, cellSizeRef.current, colorsRef.current);
     });

@@ -32,6 +32,7 @@ export interface ColorPalette {
   incorrect: string;
   revealed: string;
   pencilText: string;
+  rebusBorder: string;
 }
 
 export const LIGHT_COLORS: ColorPalette = {
@@ -47,6 +48,7 @@ export const LIGHT_COLORS: ColorPalette = {
   incorrect: "#FF0000",
   revealed: "#FF6B00",
   pencilText: "#999999",
+  rebusBorder: "#3B82F6",
 };
 
 export const DARK_COLORS: ColorPalette = {
@@ -62,6 +64,7 @@ export const DARK_COLORS: ColorPalette = {
   incorrect: "#FF5555",
   revealed: "#FF8C42",
   pencilText: "#888888",
+  rebusBorder: "#60A5FA",
 };
 
 /** Default colors (light theme). */

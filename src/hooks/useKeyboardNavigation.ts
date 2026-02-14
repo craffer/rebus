@@ -197,6 +197,12 @@ export function useKeyboardNavigation() {
           break;
         }
 
+        case "Escape": {
+          e.preventDefault();
+          state.activateRebusMode();
+          break;
+        }
+
         default: {
           // Letter input
           if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {

@@ -18,6 +18,7 @@ export interface GridRenderState {
   direction: Direction;
   wordCells: CursorPosition[] | null;
   pencilCells: Record<string, boolean>;
+  isRebusMode: boolean;
 }
 
 /**
@@ -115,8 +116,22 @@ export function renderGrid(
 
       // Player value
       if (cell.player_value) {
-        const isRebus = cell.player_value.length > 1;
-        const fontSize = isRebus ? letterFontSize * 0.55 : letterFontSize;
+        const text = cell.player_value.toUpperCase();
+        const isRebus = text.length > 1;
+
+        // For rebus, shrink font until text fits within the cell (with padding)
+        let fontSize: number;
+        if (isRebus) {
+          const maxWidth = cs - cellBorderWidth * 4;
+          fontSize = letterFontSize * 0.55;
+          ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+          const measured = ctx.measureText(text).width;
+          if (measured > maxWidth) {
+            fontSize = fontSize * (maxWidth / measured);
+          }
+        } else {
+          fontSize = letterFontSize;
+        }
 
         // Determine text color: pencil < incorrect < revealed (priority order)
         const isPenciled = state.pencilCells?.[`${row},${col}`];
@@ -131,11 +146,7 @@ export function renderGrid(
         ctx.font = `${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
-        ctx.fillText(
-          cell.player_value.toUpperCase(),
-          x + cs / 2,
-          y + letterZoneCenterY,
-        );
+        ctx.fillText(text, x + cs / 2, y + letterZoneCenterY);
 
         // Incorrect triangle indicator (top-right corner, NYT-style)
         if (cell.was_incorrect && !cell.is_revealed) {
@@ -149,6 +160,22 @@ export function renderGrid(
         }
       }
     }
+  }
+
+  // Rebus mode indicator: thick blue inset border on cursor cell
+  if (state.isRebusMode) {
+    const rx = borderWidth + cursor.col * cs;
+    const ry = borderWidth + cursor.row * cs;
+    const rebusLineWidth = 3 * dpr;
+    const inset = rebusLineWidth / 2;
+    ctx.strokeStyle = colors.rebusBorder;
+    ctx.lineWidth = rebusLineWidth;
+    ctx.strokeRect(
+      rx + inset,
+      ry + inset,
+      cs - rebusLineWidth,
+      cs - rebusLineWidth,
+    );
   }
 
   // Draw cell borders
