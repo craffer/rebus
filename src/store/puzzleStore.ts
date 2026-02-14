@@ -8,6 +8,7 @@ import type {
   Direction,
   CursorPosition,
 } from "../types/puzzle";
+import type { PuzzleProgress } from "../types/progress";
 
 export interface PuzzleState {
   puzzle: Puzzle | null;
@@ -20,6 +21,15 @@ export interface PuzzleState {
   isSolved: boolean;
   /** Whether every cell is filled but the solution is incorrect. */
   showIncorrectNotice: boolean;
+
+  // Pencil mode
+  isPencilMode: boolean;
+  pencilCells: Record<string, boolean>;
+
+  // Rebus mode
+  isRebusMode: boolean;
+  rebusInput: string;
+  previousValue: string | null;
 
   // Actions
   loadPuzzle: (puzzle: Puzzle) => void;
@@ -34,6 +44,26 @@ export interface PuzzleState {
   checkSolution: () => void;
   dismissIncorrectNotice: () => void;
   resetPuzzle: () => void;
+
+  // Check/Reveal
+  checkCell: (row: number, col: number) => void;
+  checkWord: () => void;
+  checkPuzzle: () => void;
+  revealCell: (row: number, col: number) => void;
+  revealWord: () => void;
+  revealPuzzle: () => void;
+
+  // Pencil mode
+  togglePencilMode: () => void;
+
+  // Rebus mode
+  activateRebusMode: () => void;
+  deactivateRebusMode: () => void;
+  setRebusInput: (text: string) => void;
+  confirmRebus: () => void;
+
+  // Progress restoration
+  restoreProgress: (progress: PuzzleProgress) => void;
 }
 
 export const usePuzzleStore = create<PuzzleState>()(
@@ -45,6 +75,11 @@ export const usePuzzleStore = create<PuzzleState>()(
     timerRunning: false,
     isSolved: false,
     showIncorrectNotice: false,
+    isPencilMode: false,
+    pencilCells: {},
+    isRebusMode: false,
+    rebusInput: "",
+    previousValue: null,
 
     loadPuzzle: (puzzle: Puzzle) => {
       // Find the first letter cell for initial cursor
@@ -68,6 +103,11 @@ export const usePuzzleStore = create<PuzzleState>()(
         state.timerRunning = true;
         state.isSolved = false;
         state.showIncorrectNotice = false;
+        state.isPencilMode = false;
+        state.pencilCells = {};
+        state.isRebusMode = false;
+        state.rebusInput = "";
+        state.previousValue = null;
       });
     },
 
@@ -95,6 +135,14 @@ export const usePuzzleStore = create<PuzzleState>()(
         const cell = state.puzzle.grid[row][col];
         if (cell.kind === "black") return;
         cell.player_value = value;
+        const key = `${row},${col}`;
+        if (value === null) {
+          delete state.pencilCells[key];
+        } else if (state.isPencilMode) {
+          state.pencilCells[key] = true;
+        } else {
+          delete state.pencilCells[key];
+        }
       });
     },
 
@@ -176,6 +224,8 @@ export const usePuzzleStore = create<PuzzleState>()(
             const cell = state.puzzle.grid[r][c];
             if (cell.kind === "letter") {
               cell.player_value = null;
+              cell.was_incorrect = false;
+              cell.is_revealed = false;
             }
           }
         }
@@ -189,9 +239,245 @@ export const usePuzzleStore = create<PuzzleState>()(
               state.timerRunning = true;
               state.isSolved = false;
               state.showIncorrectNotice = false;
+              state.isPencilMode = false;
+              state.pencilCells = {};
+              state.isRebusMode = false;
+              state.rebusInput = "";
+              state.previousValue = null;
               return;
             }
           }
+        }
+      });
+    },
+
+    // Check/Reveal actions
+    checkCell: (row: number, col: number) => {
+      set((state) => {
+        if (!state.puzzle || !state.puzzle.has_solution) return;
+        const cell = state.puzzle.grid[row][col];
+        if (cell.kind === "black" || !cell.player_value) return;
+        const expected = cell.solution?.toUpperCase() ?? "";
+        const actual = cell.player_value.toUpperCase();
+        if (actual !== expected) {
+          cell.was_incorrect = true;
+        }
+      });
+    },
+
+    checkWord: () => {
+      const s = get();
+      const wordCells = selectCurrentWordCells(s);
+      if (!wordCells || !s.puzzle || !s.puzzle.has_solution) return;
+      set((state) => {
+        if (!state.puzzle) return;
+        for (const pos of wordCells) {
+          const cell = state.puzzle.grid[pos.row][pos.col];
+          if (cell.kind === "black" || !cell.player_value) continue;
+          const expected = cell.solution?.toUpperCase() ?? "";
+          const actual = cell.player_value.toUpperCase();
+          if (actual !== expected) {
+            cell.was_incorrect = true;
+          }
+        }
+      });
+    },
+
+    checkPuzzle: () => {
+      set((state) => {
+        if (!state.puzzle || !state.puzzle.has_solution) return;
+        for (let r = 0; r < state.puzzle.height; r++) {
+          for (let c = 0; c < state.puzzle.width; c++) {
+            const cell = state.puzzle.grid[r][c];
+            if (cell.kind === "black" || !cell.player_value) continue;
+            const expected = cell.solution?.toUpperCase() ?? "";
+            const actual = cell.player_value.toUpperCase();
+            if (actual !== expected) {
+              cell.was_incorrect = true;
+            }
+          }
+        }
+      });
+    },
+
+    revealCell: (row: number, col: number) => {
+      set((state) => {
+        if (!state.puzzle || !state.puzzle.has_solution) return;
+        const cell = state.puzzle.grid[row][col];
+        if (cell.kind === "black") return;
+        cell.player_value = cell.rebus_solution ?? cell.solution;
+        cell.is_revealed = true;
+        cell.was_incorrect = false;
+      });
+    },
+
+    revealWord: () => {
+      const s = get();
+      const wordCells = selectCurrentWordCells(s);
+      if (!wordCells || !s.puzzle || !s.puzzle.has_solution) return;
+      set((state) => {
+        if (!state.puzzle) return;
+        for (const pos of wordCells) {
+          const cell = state.puzzle.grid[pos.row][pos.col];
+          if (cell.kind === "black") continue;
+          cell.player_value = cell.rebus_solution ?? cell.solution;
+          cell.is_revealed = true;
+          cell.was_incorrect = false;
+        }
+      });
+    },
+
+    revealPuzzle: () => {
+      set((state) => {
+        if (!state.puzzle || !state.puzzle.has_solution) return;
+        for (let r = 0; r < state.puzzle.height; r++) {
+          for (let c = 0; c < state.puzzle.width; c++) {
+            const cell = state.puzzle.grid[r][c];
+            if (cell.kind === "black") continue;
+            cell.player_value = cell.rebus_solution ?? cell.solution;
+            cell.is_revealed = true;
+            cell.was_incorrect = false;
+          }
+        }
+        state.isSolved = true;
+        state.timerRunning = false;
+      });
+    },
+
+    // Pencil mode
+    togglePencilMode: () => {
+      set((state) => {
+        state.isPencilMode = !state.isPencilMode;
+      });
+    },
+
+    // Rebus mode
+    activateRebusMode: () => {
+      set((state) => {
+        if (!state.puzzle) return;
+        const cell = state.puzzle.grid[state.cursor.row][state.cursor.col];
+        if (cell.kind === "black") return;
+        state.isRebusMode = true;
+        state.rebusInput = cell.player_value ?? "";
+        state.previousValue = cell.player_value;
+      });
+    },
+
+    deactivateRebusMode: () => {
+      set((state) => {
+        if (!state.puzzle) return;
+        const cell = state.puzzle.grid[state.cursor.row][state.cursor.col];
+        if (cell.kind !== "black") {
+          cell.player_value = state.previousValue;
+        }
+        state.isRebusMode = false;
+        state.rebusInput = "";
+        state.previousValue = null;
+      });
+    },
+
+    setRebusInput: (text: string) => {
+      set((state) => {
+        if (!state.puzzle) return;
+        state.rebusInput = text;
+        // Live-update cell for preview
+        const cell = state.puzzle.grid[state.cursor.row][state.cursor.col];
+        if (cell.kind !== "black") {
+          cell.player_value = text || null;
+        }
+      });
+    },
+
+    confirmRebus: () => {
+      const s = get();
+      if (!s.puzzle || !s.isRebusMode) return;
+      const { cursor, direction, rebusInput } = s;
+
+      set((state) => {
+        if (!state.puzzle) return;
+        const cell = state.puzzle.grid[cursor.row][cursor.col];
+        if (cell.kind !== "black") {
+          cell.player_value = rebusInput || null;
+          // Handle pencil mode for rebus
+          const key = `${cursor.row},${cursor.col}`;
+          if (!rebusInput) {
+            delete state.pencilCells[key];
+          } else if (state.isPencilMode) {
+            state.pencilCells[key] = true;
+          } else {
+            delete state.pencilCells[key];
+          }
+        }
+        state.isRebusMode = false;
+        state.rebusInput = "";
+        state.previousValue = null;
+      });
+
+      // Advance cursor after confirming rebus
+      const freshState = get();
+      const currentClue = selectCurrentClue(freshState);
+      if (currentClue && freshState.puzzle) {
+        // Import not available here, so just use simple next-cell logic
+        // Move to next cell in the word direction
+        const nextRow = direction === "down" ? cursor.row + 1 : cursor.row;
+        const nextCol = direction === "across" ? cursor.col + 1 : cursor.col;
+        if (
+          freshState.puzzle &&
+          nextRow < freshState.puzzle.height &&
+          nextCol < freshState.puzzle.width &&
+          freshState.puzzle.grid[nextRow][nextCol].kind === "letter"
+        ) {
+          freshState.setCursor(nextRow, nextCol);
+        }
+      }
+
+      // Check if puzzle is complete
+      get().checkSolution();
+    },
+
+    restoreProgress: (progress: PuzzleProgress) => {
+      info("Restoring saved progress");
+      set((state) => {
+        if (!state.puzzle) return;
+
+        // Restore cell values
+        let idx = 0;
+        for (let r = 0; r < state.puzzle.height; r++) {
+          for (let c = 0; c < state.puzzle.width; c++) {
+            const cellVal = progress.cellValues[idx];
+            if (cellVal !== null && state.puzzle.grid[r][c].kind === "letter") {
+              state.puzzle.grid[r][c].player_value = cellVal;
+            }
+            idx++;
+          }
+        }
+
+        // Restore incorrect/revealed flags
+        for (const key of progress.incorrectCells) {
+          const [r, c] = key.split(",").map(Number);
+          if (state.puzzle.grid[r]?.[c]) {
+            state.puzzle.grid[r][c].was_incorrect = true;
+          }
+        }
+        for (const key of progress.revealedCells) {
+          const [r, c] = key.split(",").map(Number);
+          if (state.puzzle.grid[r]?.[c]) {
+            state.puzzle.grid[r][c].is_revealed = true;
+          }
+        }
+
+        // Restore pencil cells
+        const pencilRecord: Record<string, boolean> = {};
+        for (const key of progress.pencilCells) {
+          pencilRecord[key] = true;
+        }
+        state.pencilCells = pencilRecord;
+
+        // Restore timer and solved state
+        state.elapsedSeconds = progress.elapsedSeconds;
+        state.isSolved = progress.isSolved;
+        if (progress.isSolved) {
+          state.timerRunning = false;
         }
       });
     },

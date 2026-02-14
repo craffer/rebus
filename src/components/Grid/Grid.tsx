@@ -77,6 +77,7 @@ export default function Grid() {
       cursor: state.cursor,
       direction: state.direction,
       wordCells: selectCurrentWordCells(state),
+      pencilCells: state.pencilCells,
     };
     renderGrid(ctx, renderState, dpr, cellSize, colors);
 
@@ -88,6 +89,7 @@ export default function Grid() {
         cursor: s.cursor,
         direction: s.direction,
         wordCells: selectCurrentWordCells(s),
+        pencilCells: s.pencilCells,
       };
       renderGrid(ctx, rs, dpr, cellSizeRef.current, colorsRef.current);
     });

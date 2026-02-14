@@ -28,6 +28,22 @@ export function useKeyboardNavigation() {
       // Block all puzzle input when timer is paused
       if (!state.timerRunning) return;
 
+      // Rebus mode intercepts all input
+      const { isRebusMode, rebusInput } = state;
+      if (isRebusMode) {
+        e.preventDefault();
+        if (e.key === "Enter") {
+          state.confirmRebus();
+        } else if (e.key === "Escape") {
+          state.deactivateRebusMode();
+        } else if (e.key === "Backspace") {
+          state.setRebusInput(rebusInput.slice(0, -1));
+        } else if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
+          state.setRebusInput(rebusInput + e.key.toUpperCase());
+        }
+        return;
+      }
+
       const settings = useSettingsStore.getState().settings.navigation;
 
       switch (e.key) {
@@ -160,6 +176,24 @@ export function useKeyboardNavigation() {
             if (e.metaKey || e.ctrlKey || e.altKey) break;
 
             state.setCellValue(cursor.row, cursor.col, e.key.toUpperCase());
+
+            // Auto-check behavior
+            const autoCheck = useSettingsStore.getState().settings.auto_check;
+            if (autoCheck === "check") {
+              usePuzzleStore.getState().checkCell(cursor.row, cursor.col);
+            } else if (autoCheck === "reveal") {
+              // Check if the value is incorrect, then reveal
+              const freshCell =
+                usePuzzleStore.getState().puzzle?.grid[cursor.row][cursor.col];
+              if (
+                freshCell &&
+                freshCell.solution &&
+                freshCell.player_value?.toUpperCase() !==
+                  freshCell.solution.toUpperCase()
+              ) {
+                usePuzzleStore.getState().revealCell(cursor.row, cursor.col);
+              }
+            }
 
             // Advance cursor
             const currentClue = selectCurrentClue(usePuzzleStore.getState());

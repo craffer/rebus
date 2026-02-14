@@ -31,6 +31,7 @@ export interface ColorPalette {
   circle: string;
   incorrect: string;
   revealed: string;
+  pencilText: string;
 }
 
 export const LIGHT_COLORS: ColorPalette = {
@@ -45,6 +46,7 @@ export const LIGHT_COLORS: ColorPalette = {
   circle: "#000000",
   incorrect: "#FF0000",
   revealed: "#FF6B00",
+  pencilText: "#999999",
 };
 
 export const DARK_COLORS: ColorPalette = {
@@ -59,6 +61,7 @@ export const DARK_COLORS: ColorPalette = {
   circle: "#C0C0C0",
   incorrect: "#FF5555",
   revealed: "#FF8C42",
+  pencilText: "#888888",
 };
 
 /** Default colors (light theme). */

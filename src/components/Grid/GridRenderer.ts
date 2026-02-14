@@ -17,6 +17,7 @@ export interface GridRenderState {
   cursor: CursorPosition;
   direction: Direction;
   wordCells: CursorPosition[] | null;
+  pencilCells: Record<string, boolean>;
 }
 
 /**
@@ -117,7 +118,13 @@ export function renderGrid(
         const isRebus = cell.player_value.length > 1;
         const fontSize = isRebus ? letterFontSize * 0.55 : letterFontSize;
 
-        ctx.fillStyle = colors.letterText;
+        // Determine text color: pencil < incorrect < revealed (priority order)
+        const isPenciled = state.pencilCells?.[`${row},${col}`];
+        if (isPenciled) {
+          ctx.fillStyle = colors.pencilText;
+        } else {
+          ctx.fillStyle = colors.letterText;
+        }
         if (cell.was_incorrect) ctx.fillStyle = colors.incorrect;
         if (cell.is_revealed) ctx.fillStyle = colors.revealed;
 
@@ -129,6 +136,17 @@ export function renderGrid(
           x + cs / 2,
           y + letterZoneCenterY,
         );
+
+        // Incorrect triangle indicator (top-right corner, NYT-style)
+        if (cell.was_incorrect && !cell.is_revealed) {
+          ctx.fillStyle = colors.incorrect;
+          ctx.beginPath();
+          ctx.moveTo(x + cs - cellBorderWidth, y + cellBorderWidth);
+          ctx.lineTo(x + cs - cellBorderWidth, y + cs * 0.25);
+          ctx.lineTo(x + cs - cs * 0.25, y + cellBorderWidth);
+          ctx.closePath();
+          ctx.fill();
+        }
       }
     }
   }
