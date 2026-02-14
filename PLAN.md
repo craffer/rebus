@@ -58,7 +58,7 @@ User input → Keyboard handler → Zustand store → Canvas render (re-subscrib
 
 ### Directory Structure
 ```
-rebus-2/
+rebus/
 ├── crates/
 │   └── xword-parser/          # Standalone Rust crate
 │       ├── src/
@@ -253,10 +253,12 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - [x] Redacted clue list during pause (clue numbers visible, text replaced with gray bars)
 - [x] Tests: 10 new tests in `puzzleStore.test.ts` (isClueComplete + pause behavior)
 
-### Step 8: Add .ipuz and .jpz Parsers
+### Step 8: Add .ipuz, .jpz, and .xml Parsers
 - Files: `crates/xword-parser/src/ipuz.rs`, `crates/xword-parser/src/jpz.rs`
-- [ ] Parse to same unified `Puzzle` type
-- [ ] Unit tests with fixture files
+- [ ] .ipuz parser (JSON format, uses `serde_json`)
+- [ ] .jpz parser (ZIP-compressed XML, uses `quick-xml` + `zip`)
+- [ ] .xml parser (raw Crossword Compiler XML, shares jpz parser)
+- [ ] Unit tests with real PuzzleMe fixture files
 - [x] `open_puzzle` command already dispatches by extension
 
 ## Phase 2
@@ -267,11 +269,23 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - [ ] Check/reveal (per-cell, per-word, full puzzle)
 - [ ] Pencil mode, rebus mode UI
 - [ ] Save/resume progress to disk
-- [ ] Recent files list
+- [ ] Recent files / Puzzle Library (see design below)
 - [ ] Custom key bindings UI
 - [ ] Countdown timer mode (for timed practice)
 - [ ] Puzzle statistics tracking (solve times, streaks)
 - [ ] Better app icon
+
+### Recent Files / Puzzle Library (Design)
+A rich UI for accessing previously opened puzzles, replacing the basic welcome screen:
+- **Card-based grid** in welcome screen showing all opened puzzles
+- Each card displays: title, author, date opened, completion %, grid size
+- **Status indicators**: Not Started / In Progress / Completed (with visual badges)
+- **Filter/sort** by date, status, source
+- Backed by `recent-files.json` persisted in AppData alongside settings
+- "Remove from list" context menu on each card
+- Auto-populated when any puzzle is opened via the file picker
+- Clicking a card reopens the puzzle with saved progress
+- Data model: `{ filePath, puzzleId, title, author, dateOpened, completionPercent, isSolved, width, height }`
 
 ## Verification
 1. `cargo test -p xword-parser` — all parser tests pass

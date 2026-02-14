@@ -7,7 +7,7 @@ Rebus is a native desktop crossword puzzle solver built with Tauri v2 (Rust + Re
 ## Project Structure
 
 ```
-rebus-2/
+rebus/
 ├── crates/xword-parser/    # Standalone Rust crate for parsing .puz, .ipuz, .jpz
 ├── src-tauri/               # Tauri app backend (thin layer over xword-parser)
 │   └── src/

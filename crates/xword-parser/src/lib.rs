@@ -1,4 +1,6 @@
 pub mod error;
+pub mod ipuz;
+pub mod jpz;
 pub mod puz;
 pub mod types;
 
@@ -9,8 +11,8 @@ pub use types::{Cell, CellKind, Clue, Clues, Puzzle};
 pub fn parse(data: &[u8], extension: &str) -> Result<Puzzle, ParseError> {
     match extension.to_lowercase().as_str() {
         "puz" => puz::parse(data),
-        "ipuz" => Err(ParseError::UnsupportedFormat("ipuz".into())),
-        "jpz" => Err(ParseError::UnsupportedFormat("jpz".into())),
+        "ipuz" => ipuz::parse(data),
+        "jpz" | "xml" => jpz::parse(data),
         ext => Err(ParseError::UnsupportedFormat(ext.into())),
     }
 }
