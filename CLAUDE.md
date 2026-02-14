@@ -37,8 +37,25 @@ Note: First `tauri dev` build takes a few minutes to compile all Rust deps. Subs
 ```bash
 cargo test -p xword-parser   # Rust parser tests
 npx vitest run               # Frontend tests
+npm run test:coverage         # Frontend tests with coverage report + threshold enforcement
 cargo test --workspace       # All Rust tests
 ```
+
+### Testing Requirements
+
+Every new feature or bug fix must include tests.
+
+- **Stores**: All Zustand store actions must have unit tests. Test state transitions, edge cases (no puzzle loaded, black cells), and side effects. See `src/store/puzzleStore.test.ts` for patterns.
+- **Hooks**: React hooks that manage side effects (timers, keyboard listeners) must have tests. Mock Tauri plugins with `vi.mock()`. See `src/hooks/useKeyboardNavigation.test.ts` for patterns.
+- **Utils**: Pure utility functions must have thorough tests covering edge cases. See `src/utils/gridNavigation.test.ts` for patterns.
+- **Rust crate**: Each parser and public function must have unit tests. Use `#[cfg(test)]` modules. See `crates/xword-parser/src/puz.rs` for patterns.
+- **Mocking Tauri**: Always mock `@tauri-apps/plugin-log` and `@tauri-apps/plugin-fs` in test files that import code using these plugins. Use the `vi.mock()` + `await import()` pattern.
+
+### Coverage Thresholds
+
+Coverage thresholds are enforced via `vitest.config.ts` at **70% minimum** for statements, branches, functions, and lines. Run `npm run test:coverage` to verify. These thresholds should be raised over time as coverage improves — never lowered.
+
+**Rust coverage:** Not yet enforced. When CI/CD is set up or the `xword-parser` crate grows significantly, add `cargo-llvm-cov` for Rust coverage measurement and threshold enforcement. The Tauri backend (`commands.rs`) is intentionally thin and lower priority for coverage.
 
 ## Linting & Formatting
 
@@ -94,16 +111,14 @@ User input → Keyboard handler → Zustand store → Canvas render
 
 ### xword-parser Crate
 - Standalone, publishable to crates.io — no Tauri dependency
-- Currently supports .puz (Across Lite binary format) with full extension support (rebus, circles, timer)
-- .ipuz and .jpz parsers are stubbed but not yet implemented
-- 4 passing unit tests using synthetic .puz data
+- Currently supports .puz, .ipuz, and .jpz  with full extension support (rebus, circles, timer)
 
 ## Conventions
 
 - **Commit early and often** — make small, focused commits after each meaningful change
 - **Do not push** to the Git remotes without explicit instructions to do so from the user.
 - **Use latest stable versions** of all tools and frameworks
-- **Write tests** — unit tests for Rust (`cargo test`), Vitest for frontend. Each new feature should be tested.
+- **Write tests** — unit tests for Rust (`cargo test`), Vitest for frontend. Every new feature or bug fix must include tests. Run `npm run test:coverage` to verify coverage thresholds are met before committing.
 - **Run linters before committing** — pre-commit hooks enforce this, but run manually too
 - Rust: `cargo fmt` + `cargo clippy --workspace` must pass with no warnings
 - TypeScript: ESLint flat config + Prettier, strict mode
@@ -111,14 +126,5 @@ User input → Keyboard handler → Zustand store → Canvas render
 - Canvas rendering is a pure function, not a React component
 
 ## UX Requirements
-
-The solving experience should mirror the NYT crossword, with these default behaviors:
-- Arrow keys navigate between cells (stay in same square when changing direction)
-- Space clears current square and advances
-- Typing a letter auto-advances to next cell
-- Tab/Shift-Tab cycles between clues
-- Backspace clears current cell, or moves back if empty
-- Click same cell toggles across/down direction
-- Skip over filled squares (including penciled-in) is ON by default
 
 All navigation behaviors are configurable via settings. See PLAN.md "Solver Settings" section for the full settings table with defaults.
