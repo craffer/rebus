@@ -2,6 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { DEFAULT_SETTINGS } from "../types/settings";
 import type { Settings } from "../types/settings";
 
+// Mock @tauri-apps/plugin-log
+vi.mock("@tauri-apps/plugin-log", () => ({
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+}));
+
 // Mock @tauri-apps/plugin-fs
 const mockReadTextFile = vi.fn();
 const mockWriteTextFile = vi.fn();

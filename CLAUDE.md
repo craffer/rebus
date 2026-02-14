@@ -37,8 +37,23 @@ Note: First `tauri dev` build takes a few minutes to compile all Rust deps. Subs
 ```bash
 cargo test -p xword-parser   # Rust parser tests
 npx vitest run               # Frontend tests
+npm run test:coverage         # Frontend tests with coverage report + threshold enforcement
 cargo test --workspace       # All Rust tests
 ```
+
+### Testing Requirements
+
+**Every new feature or bug fix must include tests.** This is a hard requirement — PRs without adequate test coverage will not be accepted.
+
+- **Stores**: All Zustand store actions must have unit tests. Test state transitions, edge cases (no puzzle loaded, black cells), and side effects. See `src/store/puzzleStore.test.ts` for patterns.
+- **Hooks**: React hooks that manage side effects (timers, keyboard listeners) must have tests. Mock Tauri plugins with `vi.mock()`. See `src/hooks/useKeyboardNavigation.test.ts` for patterns.
+- **Utils**: Pure utility functions must have thorough tests covering edge cases. See `src/utils/gridNavigation.test.ts` for patterns.
+- **Rust crate**: Each parser and public function must have unit tests. Use `#[cfg(test)]` modules. See `crates/xword-parser/src/puz.rs` for patterns.
+- **Mocking Tauri**: Always mock `@tauri-apps/plugin-log` and `@tauri-apps/plugin-fs` in test files that import code using these plugins. Use the `vi.mock()` + `await import()` pattern.
+
+### Coverage Thresholds
+
+Coverage thresholds are enforced via `vitest.config.ts` at **50% minimum** for statements, branches, functions, and lines. Run `npm run test:coverage` to verify. These thresholds should be raised over time as coverage improves — never lowered.
 
 ## Linting & Formatting
 
@@ -103,7 +118,7 @@ User input → Keyboard handler → Zustand store → Canvas render
 - **Commit early and often** — make small, focused commits after each meaningful change
 - **Do not push** to the Git remotes without explicit instructions to do so from the user.
 - **Use latest stable versions** of all tools and frameworks
-- **Write tests** — unit tests for Rust (`cargo test`), Vitest for frontend. Each new feature should be tested.
+- **Write tests** — unit tests for Rust (`cargo test`), Vitest for frontend. Every new feature or bug fix must include tests. Run `npm run test:coverage` to verify coverage thresholds are met before committing.
 - **Run linters before committing** — pre-commit hooks enforce this, but run manually too
 - Rust: `cargo fmt` + `cargo clippy --workspace` must pass with no warnings
 - TypeScript: ESLint flat config + Prettier, strict mode
