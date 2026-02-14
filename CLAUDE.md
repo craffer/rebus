@@ -53,7 +53,7 @@ cargo test --workspace       # All Rust tests
 
 ### Coverage Thresholds
 
-Coverage thresholds are enforced via `vitest.config.ts` at **50% minimum** for statements, branches, functions, and lines. Run `npm run test:coverage` to verify. These thresholds should be raised over time as coverage improves — never lowered.
+Coverage thresholds are enforced via `vitest.config.ts` at **70% minimum** for statements, branches, functions, and lines. Run `npm run test:coverage` to verify. These thresholds should be raised over time as coverage improves — never lowered.
 
 ## Linting & Formatting
 
