@@ -1,5 +1,7 @@
 import { usePuzzleStore } from "../store/puzzleStore";
+import { useLibraryStore } from "../store/libraryStore";
 import { saveProgress, puzzleIdFromPath } from "./progressPersistence";
+import { computeCompletionPercent } from "./completionPercent";
 import type { PuzzleProgress } from "../types/progress";
 import type { PuzzleState } from "../store/puzzleStore";
 
@@ -63,6 +65,19 @@ export function startAutoSave(filePath: string): () => void {
       if (currentState.puzzle) {
         const progress = buildProgress(currentState, filePath);
         saveProgress(progress);
+
+        // Update library entry with current completion % and solved status
+        const libraryState = useLibraryStore.getState();
+        const existing = libraryState.entries.find(
+          (e) => e.filePath === filePath,
+        );
+        if (existing) {
+          libraryState.addOrUpdateEntry({
+            ...existing,
+            completionPercent: computeCompletionPercent(currentState.puzzle),
+            isSolved: currentState.isSolved,
+          });
+        }
       }
     }, 1000);
   });

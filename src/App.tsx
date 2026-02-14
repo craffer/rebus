@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { usePuzzleStore } from "./store/puzzleStore";
 import { useSettingsStore } from "./store/settingsStore";
+import { useLibraryStore } from "./store/libraryStore";
 import { usePuzzleLoader } from "./hooks/usePuzzleLoader";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
 import { useTimer } from "./hooks/useTimer";
@@ -28,9 +29,10 @@ function App() {
   useKeyboardNavigation();
   useTimer();
 
-  // Load persisted settings from disk on app startup
+  // Load persisted settings and library from disk on app startup
   useEffect(() => {
     useSettingsStore.getState()._initSettings();
+    useLibraryStore.getState()._initLibrary();
   }, []);
 
   // Toggle dark class on <html> for Tailwind dark: variant

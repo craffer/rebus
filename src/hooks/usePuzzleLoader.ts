@@ -3,9 +3,54 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { info, error as logError } from "@tauri-apps/plugin-log";
 import { usePuzzleStore } from "../store/puzzleStore";
-import { loadProgress } from "../utils/progressPersistence";
+import { useLibraryStore } from "../store/libraryStore";
+import { loadProgress, puzzleIdFromPath } from "../utils/progressPersistence";
 import { startAutoSave, stopAutoSave } from "../utils/progressAutoSave";
+import { computeCompletionPercent } from "../utils/completionPercent";
 import type { Puzzle } from "../types/puzzle";
+import type { PuzzleProgress } from "../types/progress";
+import type { LibraryEntry } from "../types/library";
+
+async function loadAndOpenPuzzle(
+  filePath: string,
+  loadPuzzle: (puzzle: Puzzle) => void,
+  restoreProgressFn: (progress: PuzzleProgress) => void,
+) {
+  stopAutoSave();
+
+  const puzzle = await invoke<Puzzle>("open_puzzle", { filePath });
+  loadPuzzle(puzzle);
+
+  // Check for saved progress and restore it
+  const progress = await loadProgress(filePath);
+  if (progress) {
+    restoreProgressFn(progress);
+    info(`Restored progress for: ${filePath.split("/").pop()}`);
+  }
+
+  // Start auto-saving progress for this puzzle
+  startAutoSave(filePath);
+
+  // Add/update library entry
+  const currentPuzzle = usePuzzleStore.getState().puzzle;
+  const completionPercent = currentPuzzle
+    ? computeCompletionPercent(currentPuzzle)
+    : 0;
+  const entry: LibraryEntry = {
+    filePath,
+    puzzleId: puzzleIdFromPath(filePath),
+    title: puzzle.title || "Untitled",
+    author: puzzle.author || "",
+    dateOpened: Date.now(),
+    completionPercent,
+    isSolved: progress?.isSolved ?? false,
+    width: puzzle.width,
+    height: puzzle.height,
+  };
+  useLibraryStore.getState().addOrUpdateEntry(entry);
+
+  info(`Puzzle loaded: ${filePath.split("/").pop()}`);
+}
 
 export function usePuzzleLoader() {
   const loadPuzzle = usePuzzleStore((s) => s.loadPuzzle);
@@ -28,29 +73,10 @@ export function usePuzzleLoader() {
         directory: false,
       });
 
-      if (!filePath) return; // User cancelled
+      if (!filePath) return;
 
       setLoading(true);
-
-      // Stop any existing auto-save from a previous puzzle
-      stopAutoSave();
-
-      const puzzle = await invoke<Puzzle>("open_puzzle", {
-        filePath: filePath as string,
-      });
-      loadPuzzle(puzzle);
-
-      // Check for saved progress and restore it
-      const progress = await loadProgress(filePath as string);
-      if (progress) {
-        restoreProgress(progress);
-        info(`Restored progress for: ${(filePath as string).split("/").pop()}`);
-      }
-
-      // Start auto-saving progress for this puzzle
-      startAutoSave(filePath as string);
-
-      info(`Puzzle loaded: ${(filePath as string).split("/").pop()}`);
+      await loadAndOpenPuzzle(filePath as string, loadPuzzle, restoreProgress);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message);
@@ -60,5 +86,22 @@ export function usePuzzleLoader() {
     }
   }, [loadPuzzle, restoreProgress]);
 
-  return { openPuzzleFile, error, loading };
+  const openPuzzleByPath = useCallback(
+    async (filePath: string) => {
+      try {
+        setError(null);
+        setLoading(true);
+        await loadAndOpenPuzzle(filePath, loadPuzzle, restoreProgress);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        setError(message);
+        logError(`Failed to open puzzle: ${message}`);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [loadPuzzle, restoreProgress],
+  );
+
+  return { openPuzzleFile, openPuzzleByPath, error, loading };
 }
