@@ -29,3 +29,6 @@ target/
 # Claude Code
 .claude/
 screenshots/
+
+# Planning
+TODOs.md

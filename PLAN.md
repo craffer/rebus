@@ -266,9 +266,9 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - [x] Dark mode (light/dark/system, canvas + Tailwind, `useIsDarkMode` hook)
 - [x] Completion animation + sound (CSS confetti overlay, Web Audio chime)
 - [x] Settings UI panel (modal with gear icon, Cmd+,, Toggle/Select components)
-- [ ] Check/reveal (per-cell, per-word, full puzzle)
-- [ ] Pencil mode, rebus mode UI
-- [ ] Save/resume progress to disk
+- [x] Check/reveal (per-cell, per-word, full puzzle)
+- [x] Pencil mode, rebus mode UI
+- [x] Save/resume progress to disk
 - [ ] Recent files / Puzzle Library (see design below)
 - [ ] Custom key bindings UI
 - [ ] Countdown timer mode (for timed practice)
