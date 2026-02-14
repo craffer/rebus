@@ -43,7 +43,7 @@ cargo test --workspace       # All Rust tests
 
 ### Testing Requirements
 
-**Every new feature or bug fix must include tests.** This is a hard requirement — PRs without adequate test coverage will not be accepted.
+Every new feature or bug fix must include tests.
 
 - **Stores**: All Zustand store actions must have unit tests. Test state transitions, edge cases (no puzzle loaded, black cells), and side effects. See `src/store/puzzleStore.test.ts` for patterns.
 - **Hooks**: React hooks that manage side effects (timers, keyboard listeners) must have tests. Mock Tauri plugins with `vi.mock()`. See `src/hooks/useKeyboardNavigation.test.ts` for patterns.
@@ -54,6 +54,8 @@ cargo test --workspace       # All Rust tests
 ### Coverage Thresholds
 
 Coverage thresholds are enforced via `vitest.config.ts` at **70% minimum** for statements, branches, functions, and lines. Run `npm run test:coverage` to verify. These thresholds should be raised over time as coverage improves — never lowered.
+
+**Rust coverage:** Not yet enforced. When CI/CD is set up or the `xword-parser` crate grows significantly, add `cargo-llvm-cov` for Rust coverage measurement and threshold enforcement. The Tauri backend (`commands.rs`) is intentionally thin and lower priority for coverage.
 
 ## Linting & Formatting
 
@@ -109,9 +111,7 @@ User input → Keyboard handler → Zustand store → Canvas render
 
 ### xword-parser Crate
 - Standalone, publishable to crates.io — no Tauri dependency
-- Currently supports .puz (Across Lite binary format) with full extension support (rebus, circles, timer)
-- .ipuz and .jpz parsers are stubbed but not yet implemented
-- 4 passing unit tests using synthetic .puz data
+- Currently supports .puz, .ipuz, and .jpz  with full extension support (rebus, circles, timer)
 
 ## Conventions
 
@@ -126,14 +126,5 @@ User input → Keyboard handler → Zustand store → Canvas render
 - Canvas rendering is a pure function, not a React component
 
 ## UX Requirements
-
-The solving experience should mirror the NYT crossword, with these default behaviors:
-- Arrow keys navigate between cells (stay in same square when changing direction)
-- Space clears current square and advances
-- Typing a letter auto-advances to next cell
-- Tab/Shift-Tab cycles between clues
-- Backspace clears current cell, or moves back if empty
-- Click same cell toggles across/down direction
-- Skip over filled squares (including penciled-in) is ON by default
 
 All navigation behaviors are configurable via settings. See PLAN.md "Solver Settings" section for the full settings table with defaults.
