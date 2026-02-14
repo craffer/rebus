@@ -11,6 +11,7 @@ import {
   getNextClue,
   getPreviousClue,
   getNextCellAfterInput,
+  isClueComplete,
 } from "./gridNavigation";
 import type { NavigationSettings } from "../types/settings";
 
@@ -95,9 +96,9 @@ const defaultNavSettings: NavigationSettings = {
   arrow_key_behavior: "stay",
   spacebar_behavior: "clear_advance",
   backspace_into_previous_word: false,
-  skip_filled: true,
-  skip_penciled: true,
+  skip_filled_cells: "all_filled",
   end_of_word_action: "stop",
+  tab_skip_completed_clues: "ink_only",
   scroll_clue_to_top: true,
 };
 
@@ -136,22 +137,24 @@ describe("getNextCellInWord", () => {
   it("returns next cell in an across word", () => {
     const puzzle = makeTestPuzzle();
     const clue = puzzle.clues.across[0]; // 1-across, row 0, 5 cells
-    const next = getNextCellInWord(puzzle, clue, "across", 0, 0, false);
+    const next = getNextCellInWord(puzzle, clue, "across", 0, 0);
     expect(next).toEqual({ row: 0, col: 1 });
   });
 
   it("returns null at end of word", () => {
     const puzzle = makeTestPuzzle();
     const clue = puzzle.clues.across[0];
-    const next = getNextCellInWord(puzzle, clue, "across", 0, 4, false);
+    const next = getNextCellInWord(puzzle, clue, "across", 0, 4);
     expect(next).toBeNull();
   });
 
-  it("skips filled cells when skip_filled is true", () => {
+  it("skips filled cells when shouldSkipCell is provided", () => {
     const puzzle = makeTestPuzzle();
     puzzle.grid[0][1].player_value = "B";
     const clue = puzzle.clues.across[0];
-    const next = getNextCellInWord(puzzle, clue, "across", 0, 0, true);
+    const skipFilled = (r: number, c: number) =>
+      puzzle.grid[r][c].player_value !== null;
+    const next = getNextCellInWord(puzzle, clue, "across", 0, 0, skipFilled);
     expect(next).toEqual({ row: 0, col: 2 });
   });
 });
@@ -311,5 +314,153 @@ describe("getNextCellAfterInput", () => {
     expect(result).not.toBeNull();
     expect(result!.cursor.row).toBe(1);
     expect(result!.cursor.col).toBe(0);
+  });
+});
+
+describe("isClueComplete", () => {
+  it("returns false when cells are empty", () => {
+    const puzzle = makeTestPuzzle();
+    const clue = puzzle.clues.across[0]; // 1-across, 5 cells
+    expect(isClueComplete(puzzle, clue, "across", {}, false)).toBe(false);
+  });
+
+  it("returns true when all cells are filled", () => {
+    const puzzle = makeTestPuzzle();
+    const clue = puzzle.clues.across[0];
+    for (let i = 0; i < 5; i++) {
+      puzzle.grid[0][i].player_value = "A";
+    }
+    expect(isClueComplete(puzzle, clue, "across", {}, false)).toBe(true);
+  });
+
+  it("returns false with onlyInk when some cells are penciled", () => {
+    const puzzle = makeTestPuzzle();
+    const clue = puzzle.clues.across[0];
+    for (let i = 0; i < 5; i++) {
+      puzzle.grid[0][i].player_value = "A";
+    }
+    const pencilCells: Record<string, boolean> = { "0,2": true };
+    expect(isClueComplete(puzzle, clue, "across", pencilCells, true)).toBe(
+      false,
+    );
+  });
+
+  it("returns true without onlyInk even when cells are penciled", () => {
+    const puzzle = makeTestPuzzle();
+    const clue = puzzle.clues.across[0];
+    for (let i = 0; i < 5; i++) {
+      puzzle.grid[0][i].player_value = "A";
+    }
+    const pencilCells: Record<string, boolean> = { "0,2": true };
+    expect(isClueComplete(puzzle, clue, "across", pencilCells, false)).toBe(
+      true,
+    );
+  });
+});
+
+describe("getNextClue / getPreviousClue with skip", () => {
+  it("skips completed clues when shouldSkip is provided", () => {
+    const puzzle = makeTestPuzzle();
+    // Fill clue 6-across (single cell at row 1, col 0)
+    puzzle.grid[1][0].player_value = "A";
+
+    const shouldSkip = (clue: import("../types/puzzle").Clue, dir: string) =>
+      isClueComplete(
+        puzzle,
+        clue,
+        dir as import("../types/puzzle").Direction,
+        {},
+        false,
+      );
+
+    // From 1-across, next should skip 6-across (filled) and land on 7-across
+    const { clue, direction } = getNextClue(
+      puzzle,
+      "across",
+      puzzle.clues.across[0],
+      shouldSkip,
+    );
+    expect(clue.number).toBe(7);
+    expect(direction).toBe("across");
+  });
+
+  it("skips multiple completed clues", () => {
+    const puzzle = makeTestPuzzle();
+    // Fill clues 6, 7, 8 across (all single-cell)
+    puzzle.grid[1][0].player_value = "A"; // 6-across
+    puzzle.grid[1][2].player_value = "A"; // 7-across
+    puzzle.grid[1][4].player_value = "A"; // 8-across
+
+    const shouldSkip = (clue: import("../types/puzzle").Clue, dir: string) =>
+      isClueComplete(
+        puzzle,
+        clue,
+        dir as import("../types/puzzle").Direction,
+        {},
+        false,
+      );
+
+    const { clue, direction } = getNextClue(
+      puzzle,
+      "across",
+      puzzle.clues.across[0],
+      shouldSkip,
+    );
+    expect(clue.number).toBe(9);
+    expect(direction).toBe("across");
+  });
+
+  it("getPreviousClue skips completed clues", () => {
+    const puzzle = makeTestPuzzle();
+    // Fill 7-across (single cell at row 1, col 2)
+    puzzle.grid[1][2].player_value = "A";
+
+    const shouldSkip = (clue: import("../types/puzzle").Clue, dir: string) =>
+      isClueComplete(
+        puzzle,
+        clue,
+        dir as import("../types/puzzle").Direction,
+        {},
+        false,
+      );
+
+    // From 8-across, previous should skip 7-across and land on 6-across
+    const { clue } = getPreviousClue(
+      puzzle,
+      "across",
+      puzzle.clues.across[3], // 8-across
+      shouldSkip,
+    );
+    expect(clue.number).toBe(6);
+  });
+
+  it("returns current clue when all clues are completed", () => {
+    const puzzle = makeTestPuzzle();
+    // Fill every cell
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          puzzle.grid[r][c].player_value = "A";
+        }
+      }
+    }
+
+    const shouldSkip = (clue: import("../types/puzzle").Clue, dir: string) =>
+      isClueComplete(
+        puzzle,
+        clue,
+        dir as import("../types/puzzle").Direction,
+        {},
+        false,
+      );
+
+    const { clue } = getNextClue(
+      puzzle,
+      "across",
+      puzzle.clues.across[0],
+      shouldSkip,
+    );
+    // Should return starting clue since all are complete
+    expect(clue.number).toBe(1);
   });
 });

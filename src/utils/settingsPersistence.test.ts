@@ -39,14 +39,14 @@ describe("settingsPersistence", () => {
         ...DEFAULT_SETTINGS,
         navigation: {
           ...DEFAULT_SETTINGS.navigation,
-          skip_filled: false,
+          skip_filled_cells: "none",
         },
       };
       mockExists.mockResolvedValue(true);
       mockReadTextFile.mockResolvedValue(JSON.stringify(saved));
 
       const result = await loadSettings();
-      expect(result.navigation.skip_filled).toBe(false);
+      expect(result.navigation.skip_filled_cells).toBe("none");
       // Other settings should still have defaults
       expect(result.navigation.arrow_key_behavior).toBe("stay");
     });

@@ -4,6 +4,7 @@ export type EndOfWordAction =
   | "stop"
   | "jump_back_to_blank"
   | "jump_to_next_clue";
+export type TabSkipMode = "none" | "ink_only" | "all_filled";
 export type AutoCheckMode = "off" | "check" | "reveal";
 export type TimerDirection = "up" | "down";
 export type ClueFontSize = "small" | "medium" | "large";
@@ -13,9 +14,9 @@ export interface NavigationSettings {
   arrow_key_behavior: ArrowKeyBehavior;
   spacebar_behavior: SpacebarBehavior;
   backspace_into_previous_word: boolean;
-  skip_filled: boolean;
-  skip_penciled: boolean;
+  skip_filled_cells: TabSkipMode;
   end_of_word_action: EndOfWordAction;
+  tab_skip_completed_clues: TabSkipMode;
   scroll_clue_to_top: boolean;
 }
 
@@ -47,9 +48,9 @@ export const DEFAULT_SETTINGS: Settings = {
     arrow_key_behavior: "stay",
     spacebar_behavior: "clear_advance",
     backspace_into_previous_word: false,
-    skip_filled: true,
-    skip_penciled: true,
+    skip_filled_cells: "all_filled",
     end_of_word_action: "stop",
+    tab_skip_completed_clues: "ink_only",
     scroll_clue_to_top: true,
   },
   feedback: {

@@ -22,6 +22,7 @@ export function isFilled(puzzle: Puzzle, row: number, col: number): boolean {
 /**
  * Get the next cell in the given direction, optionally skipping filled cells.
  * Returns null if no valid next cell exists within the current word.
+ * shouldSkipCell, if provided, determines whether a filled cell should be skipped.
  */
 export function getNextCellInWord(
   puzzle: Puzzle,
@@ -29,7 +30,7 @@ export function getNextCellInWord(
   direction: Direction,
   currentRow: number,
   currentCol: number,
-  skipFilled: boolean,
+  shouldSkipCell?: (row: number, col: number) => boolean,
 ): CursorPosition | null {
   const dr = direction === "down" ? 1 : 0;
   const dc = direction === "across" ? 1 : 0;
@@ -38,7 +39,7 @@ export function getNextCellInWord(
   let c = currentCol + dc;
 
   while (isLetterCell(puzzle, r, c) && isInWord(clue, direction, r, c)) {
-    if (!skipFilled || !isFilled(puzzle, r, c)) {
+    if (!shouldSkipCell || !shouldSkipCell(r, c)) {
       return { row: r, col: c };
     }
     r += dr;
@@ -132,6 +133,26 @@ export function findClueAtPosition(
   return null;
 }
 
+/**
+ * Check if every cell in a clue's word is filled.
+ * If onlyInk is true, penciled cells are NOT considered filled.
+ */
+export function isClueComplete(
+  puzzle: Puzzle,
+  clue: Clue,
+  direction: Direction,
+  pencilCells: Record<string, boolean>,
+  onlyInk: boolean,
+): boolean {
+  for (let i = 0; i < clue.length; i++) {
+    const r = direction === "across" ? clue.row : clue.row + i;
+    const c = direction === "across" ? clue.col + i : clue.col;
+    if (!isFilled(puzzle, r, c)) return false;
+    if (onlyInk && pencilCells[`${r},${c}`]) return false;
+  }
+  return true;
+}
+
 /** Get the first blank cell in a word, or null if all filled. */
 export function getFirstBlankInWord(
   puzzle: Puzzle,
@@ -148,48 +169,79 @@ export function getFirstBlankInWord(
   return null;
 }
 
-/** Get the next clue in the list, wrapping around. */
+/**
+ * Get the next clue in the list, wrapping around.
+ * If shouldSkip is provided, skips clues for which it returns true.
+ * Will never skip the starting clue (to avoid infinite loops when all clues match).
+ */
 export function getNextClue(
   puzzle: Puzzle,
   direction: Direction,
   currentClue: Clue,
+  shouldSkip?: (clue: Clue, dir: Direction) => boolean,
 ): { clue: Clue; direction: Direction } {
-  const clueList =
-    direction === "across" ? puzzle.clues.across : puzzle.clues.down;
+  const totalClues = puzzle.clues.across.length + puzzle.clues.down.length;
+  let dir = direction;
+  let clueList = dir === "across" ? puzzle.clues.across : puzzle.clues.down;
+  let idx = clueList.findIndex((c) => c.number === currentClue.number);
 
-  const idx = clueList.findIndex((c) => c.number === currentClue.number);
+  for (let step = 0; step < totalClues; step++) {
+    idx++;
+    if (idx >= clueList.length) {
+      // Wrap to other direction
+      dir = dir === "across" ? "down" : "across";
+      clueList = dir === "across" ? puzzle.clues.across : puzzle.clues.down;
+      idx = 0;
+    }
 
-  if (idx < clueList.length - 1) {
-    return { clue: clueList[idx + 1], direction };
+    const candidate = clueList[idx];
+    // Stop if we've wrapped all the way back to the starting clue
+    if (candidate.number === currentClue.number && dir === direction) {
+      return { clue: candidate, direction: dir };
+    }
+    if (!shouldSkip || !shouldSkip(candidate, dir)) {
+      return { clue: candidate, direction: dir };
+    }
   }
 
-  // Wrap to other direction
-  const otherDirection: Direction = direction === "across" ? "down" : "across";
-  const otherList =
-    otherDirection === "across" ? puzzle.clues.across : puzzle.clues.down;
-  return { clue: otherList[0], direction: otherDirection };
+  // All clues match skip — return next adjacent clue (fallback)
+  return { clue: currentClue, direction };
 }
 
-/** Get the previous clue in the list, wrapping around. */
+/**
+ * Get the previous clue in the list, wrapping around.
+ * If shouldSkip is provided, skips clues for which it returns true.
+ */
 export function getPreviousClue(
   puzzle: Puzzle,
   direction: Direction,
   currentClue: Clue,
+  shouldSkip?: (clue: Clue, dir: Direction) => boolean,
 ): { clue: Clue; direction: Direction } {
-  const clueList =
-    direction === "across" ? puzzle.clues.across : puzzle.clues.down;
+  const totalClues = puzzle.clues.across.length + puzzle.clues.down.length;
+  let dir = direction;
+  let clueList = dir === "across" ? puzzle.clues.across : puzzle.clues.down;
+  let idx = clueList.findIndex((c) => c.number === currentClue.number);
 
-  const idx = clueList.findIndex((c) => c.number === currentClue.number);
+  for (let step = 0; step < totalClues; step++) {
+    idx--;
+    if (idx < 0) {
+      // Wrap to other direction
+      dir = dir === "across" ? "down" : "across";
+      clueList = dir === "across" ? puzzle.clues.across : puzzle.clues.down;
+      idx = clueList.length - 1;
+    }
 
-  if (idx > 0) {
-    return { clue: clueList[idx - 1], direction };
+    const candidate = clueList[idx];
+    if (candidate.number === currentClue.number && dir === direction) {
+      return { clue: candidate, direction: dir };
+    }
+    if (!shouldSkip || !shouldSkip(candidate, dir)) {
+      return { clue: candidate, direction: dir };
+    }
   }
 
-  // Wrap to other direction
-  const otherDirection: Direction = direction === "across" ? "down" : "across";
-  const otherList =
-    otherDirection === "across" ? puzzle.clues.across : puzzle.clues.down;
-  return { clue: otherList[otherList.length - 1], direction: otherDirection };
+  return { clue: currentClue, direction };
 }
 
 /** Get the previous clue's starting position for backspace-across-word-boundary. */
@@ -222,7 +274,20 @@ export function getNextCellAfterInput(
   currentRow: number,
   currentCol: number,
   settings: NavigationSettings,
+  pencilCells?: Record<string, boolean>,
 ): { cursor: CursorPosition; direction: Direction } | null {
+  // Build skip predicate from settings
+  const skipMode = settings.skip_filled_cells;
+  const shouldSkipCell =
+    skipMode !== "none"
+      ? (r: number, c: number) => {
+          if (!isFilled(puzzle, r, c)) return false;
+          if (skipMode === "ink_only" && pencilCells?.[`${r},${c}`])
+            return false;
+          return true;
+        }
+      : undefined;
+
   // Try to find next cell in current word
   const next = getNextCellInWord(
     puzzle,
@@ -230,7 +295,7 @@ export function getNextCellAfterInput(
     direction,
     currentRow,
     currentCol,
-    settings.skip_filled,
+    shouldSkipCell,
   );
 
   if (next) {

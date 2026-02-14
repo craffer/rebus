@@ -10,8 +10,9 @@ import {
   getFirstBlankInWord,
   findClueAtPosition,
   getPreviousWordLastCell,
+  isClueComplete,
 } from "../utils/gridNavigation";
-import type { Direction } from "../types/puzzle";
+import type { Clue, Direction } from "../types/puzzle";
 
 /**
  * Hook that handles all keyboard input for crossword solving.
@@ -61,9 +62,22 @@ export function useKeyboardNavigation() {
           const currentClue = selectCurrentClue(state);
           if (!currentClue) break;
 
+          const skipMode = settings.tab_skip_completed_clues;
+          const shouldSkip =
+            skipMode !== "none"
+              ? (clue: Clue, dir: Direction) =>
+                  isClueComplete(
+                    puzzle,
+                    clue,
+                    dir,
+                    state.pencilCells,
+                    skipMode === "ink_only",
+                  )
+              : undefined;
+
           const { clue: targetClue, direction: targetDir } = e.shiftKey
-            ? getPreviousClue(puzzle, direction, currentClue)
-            : getNextClue(puzzle, direction, currentClue);
+            ? getPreviousClue(puzzle, direction, currentClue, shouldSkip)
+            : getNextClue(puzzle, direction, currentClue, shouldSkip);
 
           const blank = getFirstBlankInWord(puzzle, targetClue, targetDir);
           state.setCursor(
@@ -79,10 +93,24 @@ export function useKeyboardNavigation() {
           const currentClue = selectCurrentClue(state);
           if (!currentClue) break;
 
+          const enterSkipMode = settings.tab_skip_completed_clues;
+          const enterShouldSkip =
+            enterSkipMode !== "none"
+              ? (clue: Clue, dir: Direction) =>
+                  isClueComplete(
+                    puzzle,
+                    clue,
+                    dir,
+                    state.pencilCells,
+                    enterSkipMode === "ink_only",
+                  )
+              : undefined;
+
           const { clue: targetClue, direction: targetDir } = getNextClue(
             puzzle,
             direction,
             currentClue,
+            enterShouldSkip,
           );
 
           const blank = getFirstBlankInWord(puzzle, targetClue, targetDir);
@@ -109,7 +137,7 @@ export function useKeyboardNavigation() {
                 direction,
                 cursor.row,
                 cursor.col,
-                { ...settings, skip_filled: false },
+                { ...settings, skip_filled_cells: "none" },
               );
               if (next) {
                 state.setCursor(next.cursor.row, next.cursor.col);
@@ -205,6 +233,7 @@ export function useKeyboardNavigation() {
                 cursor.row,
                 cursor.col,
                 settings,
+                state.pencilCells,
               );
               if (next) {
                 state.setCursor(next.cursor.row, next.cursor.col);

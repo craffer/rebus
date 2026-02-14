@@ -6,6 +6,7 @@ import type {
   ArrowKeyBehavior,
   SpacebarBehavior,
   EndOfWordAction,
+  TabSkipMode,
   AutoCheckMode,
   TimerDirection,
   ClueFontSize,
@@ -144,16 +145,25 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
             updateNavigation({ backspace_into_previous_word: v })
           }
         />
-        <Toggle
+        <Select<TabSkipMode>
           label="Skip filled squares"
-          checked={settings.navigation.skip_filled}
-          onChange={(v) => updateNavigation({ skip_filled: v })}
+          value={settings.navigation.skip_filled_cells}
+          onChange={(v) => updateNavigation({ skip_filled_cells: v })}
+          options={[
+            { value: "all_filled", label: "All filled (ink + pencil)" },
+            { value: "ink_only", label: "Ink only" },
+            { value: "none", label: "Off" },
+          ]}
         />
-        <Toggle
-          label="Skip penciled-in squares"
-          description="Only applies when skip filled is on"
-          checked={settings.navigation.skip_penciled}
-          onChange={(v) => updateNavigation({ skip_penciled: v })}
+        <Select<TabSkipMode>
+          label="Skip filled clues"
+          value={settings.navigation.tab_skip_completed_clues}
+          onChange={(v) => updateNavigation({ tab_skip_completed_clues: v })}
+          options={[
+            { value: "all_filled", label: "All filled (ink + pencil)" },
+            { value: "ink_only", label: "Ink only" },
+            { value: "none", label: "Off" },
+          ]}
         />
         <Toggle
           label="Scroll clue to top"
