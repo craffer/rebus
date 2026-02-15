@@ -45,6 +45,7 @@ function buildProgress(state: PuzzleState, filePath: string): PuzzleProgress {
     revealedCells,
     elapsedSeconds: state.elapsedSeconds,
     isSolved: state.isSolved,
+    usedHelp: state.usedHelp,
     lastSaved: Date.now(),
   };
 }
@@ -72,6 +73,7 @@ function doSave(filePath: string) {
       ...existing,
       completionPercent: computeCompletionPercent(currentState.puzzle),
       isSolved: currentState.isSolved,
+      usedHelp: currentState.usedHelp,
       elapsedSeconds: currentState.elapsedSeconds,
     });
   }
@@ -102,7 +104,8 @@ export function startAutoSave(filePath: string): () => void {
     if (
       state.puzzle === prevState.puzzle &&
       state.elapsedSeconds === prevState.elapsedSeconds &&
-      state.isSolved === prevState.isSolved
+      state.isSolved === prevState.isSolved &&
+      state.usedHelp === prevState.usedHelp
     ) {
       return;
     }

@@ -25,6 +25,8 @@ export interface PuzzleState {
   wasFullyFilled: boolean;
   /** True only when the user just solved the puzzle (not on restore). Reset by dismissJustSolved(). */
   justSolved: boolean;
+  /** Whether check or reveal was used during this solve session. */
+  usedHelp: boolean;
 
   // Pencil mode
   isPencilMode: boolean;
@@ -83,6 +85,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     showIncorrectNotice: false,
     wasFullyFilled: false,
     justSolved: false,
+    usedHelp: false,
     isPencilMode: false,
     pencilCells: {},
     isRebusMode: false,
@@ -110,6 +113,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         state.elapsedSeconds = 0;
         state.timerRunning = true;
         state.isSolved = false;
+        state.usedHelp = false;
         state.showIncorrectNotice = false;
         state.wasFullyFilled = false;
         state.isPencilMode = false;
@@ -268,6 +272,7 @@ export const usePuzzleStore = create<PuzzleState>()(
               state.elapsedSeconds = 0;
               state.timerRunning = true;
               state.isSolved = false;
+              state.usedHelp = false;
               state.justSolved = false;
               state.showIncorrectNotice = false;
               state.wasFullyFilled = false;
@@ -292,6 +297,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         state.elapsedSeconds = 0;
         state.timerRunning = false;
         state.isSolved = false;
+        state.usedHelp = false;
         state.justSolved = false;
         state.showIncorrectNotice = false;
         state.wasFullyFilled = false;
@@ -307,6 +313,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     checkCell: (row: number, col: number) => {
       set((state) => {
         if (!state.puzzle || !state.puzzle.has_solution) return;
+        state.usedHelp = true;
         const cell = state.puzzle.grid[row][col];
         if (cell.kind === "black" || !cell.player_value) return;
         const expected = cell.solution?.toUpperCase() ?? "";
@@ -323,6 +330,7 @@ export const usePuzzleStore = create<PuzzleState>()(
       if (!wordCells || !s.puzzle || !s.puzzle.has_solution) return;
       set((state) => {
         if (!state.puzzle) return;
+        state.usedHelp = true;
         for (const pos of wordCells) {
           const cell = state.puzzle.grid[pos.row][pos.col];
           if (cell.kind === "black" || !cell.player_value) continue;
@@ -338,6 +346,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     checkPuzzle: () => {
       set((state) => {
         if (!state.puzzle || !state.puzzle.has_solution) return;
+        state.usedHelp = true;
         for (let r = 0; r < state.puzzle.height; r++) {
           for (let c = 0; c < state.puzzle.width; c++) {
             const cell = state.puzzle.grid[r][c];
@@ -355,6 +364,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     revealCell: (row: number, col: number) => {
       set((state) => {
         if (!state.puzzle || !state.puzzle.has_solution) return;
+        state.usedHelp = true;
         const cell = state.puzzle.grid[row][col];
         if (cell.kind === "black") return;
         cell.player_value = cell.rebus_solution ?? cell.solution;
@@ -369,6 +379,7 @@ export const usePuzzleStore = create<PuzzleState>()(
       if (!wordCells || !s.puzzle || !s.puzzle.has_solution) return;
       set((state) => {
         if (!state.puzzle) return;
+        state.usedHelp = true;
         for (const pos of wordCells) {
           const cell = state.puzzle.grid[pos.row][pos.col];
           if (cell.kind === "black") continue;
@@ -382,6 +393,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     revealPuzzle: () => {
       set((state) => {
         if (!state.puzzle || !state.puzzle.has_solution) return;
+        state.usedHelp = true;
         for (let r = 0; r < state.puzzle.height; r++) {
           for (let c = 0; c < state.puzzle.width; c++) {
             const cell = state.puzzle.grid[r][c];
@@ -534,9 +546,10 @@ export const usePuzzleStore = create<PuzzleState>()(
         }
         state.pencilCells = pencilRecord;
 
-        // Restore timer and solved state
+        // Restore timer, solved state, and help usage
         state.elapsedSeconds = progress.elapsedSeconds;
         state.isSolved = progress.isSolved;
+        state.usedHelp = progress.usedHelp ?? false;
         if (progress.isSolved) {
           state.timerRunning = false;
         }
