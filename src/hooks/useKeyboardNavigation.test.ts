@@ -353,4 +353,48 @@ describe("useKeyboardNavigation", () => {
     expect(state.cursor.row).toBe(2);
     expect(state.cursor.col).toBe(0);
   });
+
+  // ── skip-filled-cells disabled when puzzle is fully filled ──────
+
+  it("typing does not skip filled cells when puzzle is fully filled", () => {
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    // Fill every letter cell with wrong answers
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+
+    useSettingsStore.getState().updateNavigation({
+      skip_filled_cells: "all_filled",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+    pressKey("a");
+
+    const state = usePuzzleStore.getState();
+    // Should advance to (0,1) — NOT skip over filled cells
+    expect(state.cursor).toEqual({ row: 0, col: 1 });
+  });
+
+  it("typing still skips filled cells when puzzle is NOT fully filled", () => {
+    // Fill cells (0,1) and (0,2)
+    usePuzzleStore.getState().setCellValue(0, 1, "B");
+    usePuzzleStore.getState().setCellValue(0, 2, "C");
+
+    useSettingsStore.getState().updateNavigation({
+      skip_filled_cells: "all_filled",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+    pressKey("a");
+
+    const state = usePuzzleStore.getState();
+    // Should skip (0,1) and (0,2) and land on (0,3)
+    expect(state.cursor).toEqual({ row: 0, col: 3 });
+  });
 });

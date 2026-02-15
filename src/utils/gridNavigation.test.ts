@@ -359,6 +359,61 @@ describe("getNextCellAfterInput", () => {
     expect(result!.cursor.row).toBe(1);
     expect(result!.cursor.col).toBe(0);
   });
+
+  it("does not skip filled cells when puzzle is fully filled", () => {
+    const puzzle = makeTestPuzzle();
+    // Fill every letter cell
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          puzzle.grid[r][c].player_value = "Z";
+        }
+      }
+    }
+    const clue = puzzle.clues.across[0]; // 1-across, 5 cells
+    const settings: NavigationSettings = {
+      ...defaultNavSettings,
+      skip_filled_cells: "all_filled",
+    };
+    // From (0,0), next should be (0,1) even though it's filled
+    const result = getNextCellAfterInput(
+      puzzle,
+      clue,
+      "across",
+      0,
+      0,
+      settings,
+    );
+    expect(result).toEqual({
+      cursor: { row: 0, col: 1 },
+      direction: "across",
+    });
+  });
+
+  it("still skips filled cells when puzzle is NOT fully filled", () => {
+    const puzzle = makeTestPuzzle();
+    // Fill only cells (0,1) and (0,2) in the first row
+    puzzle.grid[0][1].player_value = "B";
+    puzzle.grid[0][2].player_value = "C";
+    const clue = puzzle.clues.across[0];
+    const settings: NavigationSettings = {
+      ...defaultNavSettings,
+      skip_filled_cells: "all_filled",
+    };
+    // From (0,0), should skip (0,1) and (0,2) and land on (0,3)
+    const result = getNextCellAfterInput(
+      puzzle,
+      clue,
+      "across",
+      0,
+      0,
+      settings,
+    );
+    expect(result).toEqual({
+      cursor: { row: 0, col: 3 },
+      direction: "across",
+    });
+  });
 });
 
 describe("isClueComplete", () => {
