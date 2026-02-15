@@ -18,7 +18,6 @@ interface PuzzleLibraryProps {
   onOpenPuzzle: (filePath: string) => void;
   isDragOver?: boolean;
   loading: boolean;
-  isInternalDrag?: boolean;
 }
 
 const STATUS_LABELS: Record<PuzzleStatus, string> = {
@@ -34,10 +33,14 @@ const STATUS_COLORS: Record<PuzzleStatus, string> = {
     "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
 };
 
-// Module-level state for tracking which puzzle is being dragged.
-// We use this instead of dataTransfer because Tauri's webview can
-// intercept browser DnD events and clear dataTransfer data.
+// Module-level state for mouse-based drag tracking.
+// We avoid HTML5 DnD entirely because Tauri's webview intercepts native
+// drag events and cancels the browser drag operation before dragover/drop
+// can fire on the target element.
 let draggedPuzzlePath: string | null = null;
+let dragStartPos: { x: number; y: number } | null = null;
+let isDragging = false;
+const DRAG_THRESHOLD = 5; // px of movement before drag activates
 
 function PuzzleCard({
   entry,
@@ -59,6 +62,7 @@ function PuzzleCard({
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
+  const [isBeingDragged, setIsBeingDragged] = useState(false);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
   const status = getEntryStatus(entry);
@@ -119,32 +123,68 @@ function PuzzleCard({
     [confirmRename],
   );
 
-  const handleDragStart = useCallback(
-    (e: React.DragEvent) => {
+  // Mouse-based drag: track mousedown position, activate drag after threshold
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (isRenaming || e.button !== 0) return;
+      e.preventDefault(); // Prevent text selection
       draggedPuzzlePath = entry.filePath;
-      e.dataTransfer.setData("application/x-puzzle-path", entry.filePath);
-      e.dataTransfer.effectAllowed = "move";
+      dragStartPos = { x: e.clientX, y: e.clientY };
+      isDragging = false;
+      setIsBeingDragged(false);
     },
-    [entry.filePath],
+    [entry.filePath, isRenaming],
   );
 
-  const handleDragEnd = useCallback(() => {
-    draggedPuzzlePath = null;
-  }, []);
+  useEffect(() => {
+    function handleMouseMove(e: MouseEvent) {
+      if (!dragStartPos || draggedPuzzlePath !== entry.filePath) return;
+      const dx = e.clientX - dragStartPos.x;
+      const dy = e.clientY - dragStartPos.y;
+      if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+        isDragging = true;
+        setIsBeingDragged(true);
+        document.body.style.cursor = "grabbing";
+        document.body.style.userSelect = "none";
+      }
+    }
+    function handleMouseUp() {
+      if (draggedPuzzlePath === entry.filePath) {
+        // Small delay so FolderCard's onMouseUp can read draggedPuzzlePath first
+        requestAnimationFrame(() => {
+          draggedPuzzlePath = null;
+          dragStartPos = null;
+          isDragging = false;
+          setIsBeingDragged(false);
+          document.body.style.cursor = "";
+          document.body.style.userSelect = "";
+        });
+      }
+    }
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [entry.filePath]);
 
   return (
     <div
-      draggable={!isRenaming}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
       role="button"
       tabIndex={0}
-      onClick={() => !isRenaming && onOpen(entry.filePath)}
+      onMouseDown={handleMouseDown}
+      onClick={() => !isRenaming && !isDragging && onOpen(entry.filePath)}
       onContextMenu={handleContextMenu}
       onKeyDown={(e) => {
         if (e.key === "Enter" && !isRenaming) onOpen(entry.filePath);
       }}
-      className={`relative cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 ${loading ? "pointer-events-none opacity-50" : ""}`}
+      className={`relative cursor-pointer rounded-lg border p-4 text-left transition-all hover:shadow-md dark:border-gray-700 ${
+        isBeingDragged
+          ? "opacity-50 scale-95 border-blue-400 dark:border-blue-500"
+          : "border-gray-200 bg-white dark:bg-gray-800"
+      } ${loading ? "pointer-events-none opacity-50" : ""}`}
+      style={{ userSelect: "none" }}
     >
       {/* Assisted triangle badge */}
       {entry.isSolved && entry.usedHelp && (
@@ -352,37 +392,42 @@ function FolderCard({
     setIsRenaming(false);
   }, [renameValue, folder.id, folder.name, onRename]);
 
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    // Check module-level state — more reliable than dataTransfer in Tauri
-    if (draggedPuzzlePath) {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
-      setIsDragTarget(true);
-    }
-  }, []);
+  // Mouse-based drop target: highlight when a puzzle is being dragged over,
+  // complete the move on mouseup.
+  const folderRef = useRef<HTMLDivElement>(null);
 
-  const handleDragLeave = useCallback(() => {
-    setIsDragTarget(false);
-  }, []);
+  useEffect(() => {
+    const el = folderRef.current;
+    if (!el) return;
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragTarget(false);
-      // Read from module-level state (reliable) with dataTransfer fallback
-      const filePath =
-        draggedPuzzlePath ||
-        e.dataTransfer.getData("application/x-puzzle-path");
-      if (filePath) {
-        onDropPuzzle(filePath, folder.id);
+    function handleMouseMove() {
+      if (isDragging && draggedPuzzlePath) {
+        setIsDragTarget(true);
       }
-    },
-    [folder.id, onDropPuzzle],
-  );
+    }
+    function handleMouseLeave() {
+      setIsDragTarget(false);
+    }
+    function handleMouseUp() {
+      if (isDragging && draggedPuzzlePath) {
+        onDropPuzzle(draggedPuzzlePath, folder.id);
+        setIsDragTarget(false);
+      }
+    }
+
+    el.addEventListener("mousemove", handleMouseMove);
+    el.addEventListener("mouseleave", handleMouseLeave);
+    el.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      el.removeEventListener("mousemove", handleMouseMove);
+      el.removeEventListener("mouseleave", handleMouseLeave);
+      el.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [folder.id, onDropPuzzle]);
 
   return (
     <div
+      ref={folderRef}
       role="button"
       tabIndex={0}
       onClick={() => !isRenaming && onOpen(folder.id)}
@@ -390,9 +435,6 @@ function FolderCard({
         if (e.key === "Enter" && !isRenaming) onOpen(folder.id);
       }}
       onContextMenu={handleContextMenu}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
       className={`relative flex cursor-pointer items-center gap-3 rounded-lg border p-4 text-left transition-shadow hover:shadow-md ${
         isDragTarget
           ? "border-blue-400 bg-blue-50 ring-2 ring-blue-300 dark:border-blue-500 dark:bg-blue-900/30 dark:ring-blue-600"
@@ -483,7 +525,6 @@ export default function PuzzleLibrary({
   onOpenPuzzle,
   isDragOver,
   loading,
-  isInternalDrag,
 }: PuzzleLibraryProps) {
   const rawEntries = useLibraryStore((s) => s.entries);
   const folders = useLibraryStore((s) => s.folders);
@@ -518,8 +559,8 @@ export default function PuzzleLibrary({
   const [newFolderName, setNewFolderName] = useState("");
   const newFolderRef = useRef<HTMLInputElement>(null);
 
-  // Only show the file import drop overlay for external file drags, not internal puzzle drags
-  const showFileDrop = isDragOver && !isInternalDrag;
+  // Show the file import drop overlay for external Tauri file drags
+  const showFileDrop = isDragOver;
 
   // Folders visible in the current view
   const visibleFolders = useMemo(

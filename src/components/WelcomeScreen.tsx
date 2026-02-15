@@ -1,4 +1,4 @@
-import { useCallback, useState, useEffect } from "react";
+import { useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { info, error as logError } from "@tauri-apps/plugin-log";
 import { usePuzzleLoader } from "../hooks/usePuzzleLoader";
@@ -15,20 +15,6 @@ export default function WelcomeScreen() {
   const libraryLoaded = useLibraryStore((s) => s.loaded);
   const hasEntries = useLibraryStore((s) => s.entries.length > 0);
   const hasFolders = useLibraryStore((s) => s.folders.length > 0);
-
-  // Track whether we're in an internal (puzzle card) drag vs external file drag
-  const [isInternalDrag, setIsInternalDrag] = useState(false);
-
-  useEffect(() => {
-    const handleDragStart = () => setIsInternalDrag(true);
-    const handleDragEnd = () => setIsInternalDrag(false);
-    window.addEventListener("dragstart", handleDragStart);
-    window.addEventListener("dragend", handleDragEnd);
-    return () => {
-      window.removeEventListener("dragstart", handleDragStart);
-      window.removeEventListener("dragend", handleDragEnd);
-    };
-  }, []);
 
   // Drag-drop imports files to library WITHOUT opening them.
   // If currently viewing a folder, import into that folder.
@@ -106,7 +92,6 @@ export default function WelcomeScreen() {
             onOpenPuzzle={openPuzzleByPath}
             isDragOver={isDragOver}
             loading={loading}
-            isInternalDrag={isInternalDrag}
           />
         </div>
       )}
