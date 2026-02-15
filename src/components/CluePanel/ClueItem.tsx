@@ -36,8 +36,8 @@ function getClassName(highlight: ClueHighlight, isComplete: boolean): string {
 
   if (highlight === "primary") {
     const text = isComplete
-      ? "font-semibold text-gray-400 dark:text-gray-500"
-      : "font-semibold text-blue-800 dark:text-blue-200";
+      ? "text-gray-400 dark:text-gray-500"
+      : "text-blue-800 dark:text-blue-200";
     return `${base} bg-blue-100 dark:bg-blue-800/40 ${text}`;
   }
 
