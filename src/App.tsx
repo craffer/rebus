@@ -119,7 +119,7 @@ function App() {
     );
   }
 
-  const isPaused = puzzle && !timerRunning && !isSolved;
+  const isPaused = puzzle && !timerRunning && !isSolved && !showIncorrectNotice;
 
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-gray-900">

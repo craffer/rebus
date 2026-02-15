@@ -334,6 +334,71 @@ describe("checkSolution", () => {
     expect(usePuzzleStore.getState().showIncorrectNotice).toBe(true);
   });
 
+  it("pauses timer when showing incorrect notice", () => {
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+    expect(usePuzzleStore.getState().timerRunning).toBe(true);
+    usePuzzleStore.getState().checkSolution();
+    expect(usePuzzleStore.getState().showIncorrectNotice).toBe(true);
+    expect(usePuzzleStore.getState().timerRunning).toBe(false);
+  });
+
+  it("does not show incorrect notice again while puzzle stays fully filled", () => {
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    // Fill all cells with wrong answers
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+    usePuzzleStore.getState().checkSolution();
+    expect(usePuzzleStore.getState().showIncorrectNotice).toBe(true);
+
+    // Dismiss the notice
+    usePuzzleStore.getState().dismissIncorrectNotice();
+    expect(usePuzzleStore.getState().showIncorrectNotice).toBe(false);
+
+    // Change a filled cell to another wrong value (puzzle stays fully filled)
+    usePuzzleStore.getState().setCellValue(0, 0, "Y");
+    usePuzzleStore.getState().checkSolution();
+    // Should NOT show again — puzzle was already fully filled
+    expect(usePuzzleStore.getState().showIncorrectNotice).toBe(false);
+  });
+
+  it("shows incorrect notice again after clearing and re-filling", () => {
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    // Fill all cells
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+    usePuzzleStore.getState().checkSolution();
+    expect(usePuzzleStore.getState().showIncorrectNotice).toBe(true);
+
+    // Dismiss and clear a cell
+    usePuzzleStore.getState().dismissIncorrectNotice();
+    usePuzzleStore.getState().setCellValue(0, 0, null);
+    usePuzzleStore.getState().checkSolution(); // partially filled now
+    expect(usePuzzleStore.getState().wasFullyFilled).toBe(false);
+
+    // Re-fill the cell
+    usePuzzleStore.getState().setCellValue(0, 0, "Z");
+    usePuzzleStore.getState().checkSolution();
+    // Should show again — transition from not-filled to filled
+    expect(usePuzzleStore.getState().showIncorrectNotice).toBe(true);
+  });
+
   it("does nothing when puzzle is partially filled", () => {
     usePuzzleStore.getState().setCellValue(0, 0, "A");
     usePuzzleStore.getState().checkSolution();
@@ -360,7 +425,7 @@ describe("checkSolution", () => {
     expect(usePuzzleStore.getState().isSolved).toBe(true);
   });
 
-  it("dismissIncorrectNotice clears the flag", () => {
+  it("dismissIncorrectNotice clears the flag and resumes timer", () => {
     const puzzle = usePuzzleStore.getState().puzzle!;
     for (let r = 0; r < puzzle.height; r++) {
       for (let c = 0; c < puzzle.width; c++) {
@@ -371,8 +436,10 @@ describe("checkSolution", () => {
     }
     usePuzzleStore.getState().checkSolution();
     expect(usePuzzleStore.getState().showIncorrectNotice).toBe(true);
+    expect(usePuzzleStore.getState().timerRunning).toBe(false);
     usePuzzleStore.getState().dismissIncorrectNotice();
     expect(usePuzzleStore.getState().showIncorrectNotice).toBe(false);
+    expect(usePuzzleStore.getState().timerRunning).toBe(true);
   });
 });
 

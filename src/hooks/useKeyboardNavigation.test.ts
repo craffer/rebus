@@ -264,6 +264,47 @@ describe("useKeyboardNavigation", () => {
     ).toBeNull();
   });
 
+  // ── incorrect notice state ──────────────────────────────────────
+
+  it("blocks all input when incorrect notice is showing", () => {
+    // Fill all cells with wrong answers to trigger the notice
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+    usePuzzleStore.getState().checkSolution();
+    expect(usePuzzleStore.getState().showIncorrectNotice).toBe(true);
+    expect(usePuzzleStore.getState().timerRunning).toBe(false);
+
+    // Try to type — should be blocked since timer is paused
+    usePuzzleStore.getState().setCursor(0, 0);
+    pressKey("a");
+    // Value should still be "Z", not "A"
+    expect(usePuzzleStore.getState().puzzle!.grid[0][0].player_value).toBe("Z");
+  });
+
+  it("allows input again after dismissing incorrect notice", () => {
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+    usePuzzleStore.getState().checkSolution();
+    usePuzzleStore.getState().dismissIncorrectNotice();
+    expect(usePuzzleStore.getState().timerRunning).toBe(true);
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    pressKey("a");
+    expect(usePuzzleStore.getState().puzzle!.grid[0][0].player_value).toBe("A");
+  });
+
   // ── tab ───────────────────────────────────────────────────────────
 
   it("Tab advances to next clue", () => {
@@ -282,5 +323,119 @@ describe("useKeyboardNavigation", () => {
     const state = usePuzzleStore.getState();
     expect(state.cursor.row).toBe(1);
     expect(state.cursor.col).toBe(0);
+  });
+
+  // ── skip-filled disabled when puzzle is fully filled ────────────
+
+  it("Tab does not skip filled clues when puzzle is fully filled", () => {
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    // Fill every letter cell with a value
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z"); // wrong answer
+        }
+      }
+    }
+
+    // Enable skip completed clues
+    useSettingsStore.getState().updateNavigation({
+      tab_skip_completed_clues: "all_filled",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+    pressKey("Tab");
+
+    const state = usePuzzleStore.getState();
+    // Should advance to the next clue (6-across at row 1, col 0),
+    // NOT get stuck on 1-across
+    expect(state.cursor.row).toBe(1);
+    expect(state.cursor.col).toBe(0);
+  });
+
+  it("Enter does not skip filled clues when puzzle is fully filled", () => {
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+
+    useSettingsStore.getState().updateNavigation({
+      tab_skip_completed_clues: "all_filled",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+    pressKey("Enter");
+
+    const state = usePuzzleStore.getState();
+    expect(state.cursor.row).toBe(1);
+    expect(state.cursor.col).toBe(0);
+  });
+
+  it("Tab still skips filled clues when puzzle is NOT fully filled", () => {
+    // Fill only the 6-across clue (single cell at row 1, col 0)
+    usePuzzleStore.getState().setCellValue(1, 0, "A");
+
+    useSettingsStore.getState().updateNavigation({
+      tab_skip_completed_clues: "all_filled",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+    pressKey("Tab");
+
+    const state = usePuzzleStore.getState();
+    // Should skip 6-across (filled) and land on 9-across (row 2, col 0)
+    expect(state.cursor.row).toBe(2);
+    expect(state.cursor.col).toBe(0);
+  });
+
+  // ── skip-filled-cells disabled when puzzle is fully filled ──────
+
+  it("typing does not skip filled cells when puzzle is fully filled", () => {
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    // Fill every letter cell with wrong answers
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+
+    useSettingsStore.getState().updateNavigation({
+      skip_filled_cells: "all_filled",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+    pressKey("a");
+
+    const state = usePuzzleStore.getState();
+    // Should advance to (0,1) — NOT skip over filled cells
+    expect(state.cursor).toEqual({ row: 0, col: 1 });
+  });
+
+  it("typing still skips filled cells when puzzle is NOT fully filled", () => {
+    // Fill cells (0,1) and (0,2)
+    usePuzzleStore.getState().setCellValue(0, 1, "B");
+    usePuzzleStore.getState().setCellValue(0, 2, "C");
+
+    useSettingsStore.getState().updateNavigation({
+      skip_filled_cells: "all_filled",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+    pressKey("a");
+
+    const state = usePuzzleStore.getState();
+    // Should skip (0,1) and (0,2) and land on (0,3)
+    expect(state.cursor).toEqual({ row: 0, col: 3 });
   });
 });

@@ -11,6 +11,7 @@ import {
   findClueAtPosition,
   getPreviousWordLastCell,
   isClueComplete,
+  isPuzzleFullyFilled,
 } from "../utils/gridNavigation";
 import type { Clue, Direction } from "../types/puzzle";
 
@@ -57,14 +58,18 @@ export function useKeyboardNavigation() {
           break;
         }
 
-        case "Tab": {
+        case "Tab":
+        case "Enter": {
           e.preventDefault();
           const currentClue = selectCurrentClue(state);
           if (!currentClue) break;
 
           const skipMode = settings.tab_skip_completed_clues;
+          // Don't skip filled clues when the entire puzzle is filled —
+          // the user needs to navigate freely to fix errors.
+          const allFilled = isPuzzleFullyFilled(puzzle);
           const shouldSkip =
-            skipMode !== "none"
+            skipMode !== "none" && !allFilled
               ? (clue: Clue, dir: Direction) =>
                   isClueComplete(
                     puzzle,
@@ -75,43 +80,11 @@ export function useKeyboardNavigation() {
                   )
               : undefined;
 
-          const { clue: targetClue, direction: targetDir } = e.shiftKey
-            ? getPreviousClue(puzzle, direction, currentClue, shouldSkip)
-            : getNextClue(puzzle, direction, currentClue, shouldSkip);
-
-          const blank = getFirstBlankInWord(puzzle, targetClue, targetDir);
-          state.setCursor(
-            blank?.row ?? targetClue.row,
-            blank?.col ?? targetClue.col,
-          );
-          state.setDirection(targetDir);
-          break;
-        }
-
-        case "Enter": {
-          e.preventDefault();
-          const currentClue = selectCurrentClue(state);
-          if (!currentClue) break;
-
-          const enterSkipMode = settings.tab_skip_completed_clues;
-          const enterShouldSkip =
-            enterSkipMode !== "none"
-              ? (clue: Clue, dir: Direction) =>
-                  isClueComplete(
-                    puzzle,
-                    clue,
-                    dir,
-                    state.pencilCells,
-                    enterSkipMode === "ink_only",
-                  )
-              : undefined;
-
-          const { clue: targetClue, direction: targetDir } = getNextClue(
-            puzzle,
-            direction,
-            currentClue,
-            enterShouldSkip,
-          );
+          // Tab+Shift goes backward; Enter always goes forward
+          const { clue: targetClue, direction: targetDir } =
+            e.key === "Tab" && e.shiftKey
+              ? getPreviousClue(puzzle, direction, currentClue, shouldSkip)
+              : getNextClue(puzzle, direction, currentClue, shouldSkip);
 
           const blank = getFirstBlankInWord(puzzle, targetClue, targetDir);
           state.setCursor(

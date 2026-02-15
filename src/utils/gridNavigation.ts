@@ -153,6 +153,22 @@ export function isClueComplete(
   return true;
 }
 
+/**
+ * Check if every letter cell in the puzzle is filled.
+ * Used to disable skip-completed-clues when the whole puzzle is filled
+ * (e.g., user has errors to fix and needs to navigate freely).
+ */
+export function isPuzzleFullyFilled(puzzle: Puzzle): boolean {
+  for (let r = 0; r < puzzle.height; r++) {
+    for (let c = 0; c < puzzle.width; c++) {
+      if (puzzle.grid[r][c].kind === "letter" && !isFilled(puzzle, r, c)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 /** Get the first blank cell in a word, or null if all filled. */
 export function getFirstBlankInWord(
   puzzle: Puzzle,
@@ -276,10 +292,13 @@ export function getNextCellAfterInput(
   settings: NavigationSettings,
   pencilCells?: Record<string, boolean>,
 ): { cursor: CursorPosition; direction: Direction } | null {
-  // Build skip predicate from settings
+  // Build skip predicate from settings.
+  // Don't skip filled cells when the entire puzzle is filled —
+  // the user needs to navigate freely to fix errors.
   const skipMode = settings.skip_filled_cells;
+  const allFilled = skipMode !== "none" && isPuzzleFullyFilled(puzzle);
   const shouldSkipCell =
-    skipMode !== "none"
+    skipMode !== "none" && !allFilled
       ? (r: number, c: number) => {
           if (!isFilled(puzzle, r, c)) return false;
           if (skipMode === "ink_only" && pencilCells?.[`${r},${c}`])

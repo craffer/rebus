@@ -21,6 +21,8 @@ export interface PuzzleState {
   isSolved: boolean;
   /** Whether every cell is filled but the solution is incorrect. */
   showIncorrectNotice: boolean;
+  /** Tracks whether the puzzle was fully filled on the previous check (for transition detection). */
+  wasFullyFilled: boolean;
   /** True only when the user just solved the puzzle (not on restore). Reset by dismissJustSolved(). */
   justSolved: boolean;
 
@@ -79,6 +81,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     timerRunning: false,
     isSolved: false,
     showIncorrectNotice: false,
+    wasFullyFilled: false,
     justSolved: false,
     isPencilMode: false,
     pencilCells: {},
@@ -108,6 +111,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         state.timerRunning = true;
         state.isSolved = false;
         state.showIncorrectNotice = false;
+        state.wasFullyFilled = false;
         state.isPencilMode = false;
         state.pencilCells = {};
         state.isRebusMode = false;
@@ -207,10 +211,23 @@ export const usePuzzleStore = create<PuzzleState>()(
           state.isSolved = true;
           state.justSolved = true;
           state.timerRunning = false;
+          state.wasFullyFilled = true;
         });
       } else if (allFilled) {
+        const wasFilled = get().wasFullyFilled;
         set((state) => {
-          state.showIncorrectNotice = true;
+          // Only show the "not quite" notice on the transition from
+          // not-fully-filled → fully-filled-but-wrong.
+          if (!wasFilled) {
+            state.showIncorrectNotice = true;
+            state.timerRunning = false;
+          }
+          state.wasFullyFilled = true;
+        });
+      } else {
+        // Puzzle is no longer fully filled (user cleared a cell)
+        set((state) => {
+          state.wasFullyFilled = false;
         });
       }
     },
@@ -224,6 +241,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     dismissIncorrectNotice: () => {
       set((state) => {
         state.showIncorrectNotice = false;
+        state.timerRunning = true;
       });
     },
 
@@ -252,6 +270,7 @@ export const usePuzzleStore = create<PuzzleState>()(
               state.isSolved = false;
               state.justSolved = false;
               state.showIncorrectNotice = false;
+              state.wasFullyFilled = false;
               state.isPencilMode = false;
               state.pencilCells = {};
               state.isRebusMode = false;
@@ -275,6 +294,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         state.isSolved = false;
         state.justSolved = false;
         state.showIncorrectNotice = false;
+        state.wasFullyFilled = false;
         state.isPencilMode = false;
         state.pencilCells = {};
         state.isRebusMode = false;
