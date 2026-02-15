@@ -29,9 +29,8 @@ vi.mock("../utils/progressPersistence", async (importOriginal) => {
 });
 
 const { usePuzzleStore } = await import("../store/puzzleStore");
-const { startAutoSave, stopAutoSave } = await import(
-  "../utils/progressAutoSave"
-);
+const { startAutoSave, stopAutoSave } =
+  await import("../utils/progressAutoSave");
 
 function makeCell(kind: "black" | "letter", overrides?: Partial<Cell>): Cell {
   return {
@@ -155,9 +154,7 @@ describe("progressAutoSave", () => {
 
     // Should save with the second file path only
     expect(mockSaveProgress).toHaveBeenCalledTimes(1);
-    expect(mockSaveProgress.mock.calls[0][0].filePath).toBe(
-      "/test/second.puz",
-    );
+    expect(mockSaveProgress.mock.calls[0][0].filePath).toBe("/test/second.puz");
   });
 
   it("saves when isSolved changes", () => {
@@ -169,5 +166,60 @@ describe("progressAutoSave", () => {
 
     expect(mockSaveProgress).toHaveBeenCalled();
     expect(mockSaveProgress.mock.calls[0][0].isSolved).toBe(true);
+  });
+
+  it("does not save stale data when a different puzzle is loaded before debounce fires", () => {
+    // Start with puzzle A (3x3)
+    usePuzzleStore.getState().loadPuzzle(makeTestPuzzle());
+    startAutoSave("/test/puzzleA.puz");
+
+    // User types in puzzle A, triggering a debounced save
+    usePuzzleStore.getState().setCellValue(0, 0, "X");
+
+    // Before debounce fires (1000ms), user opens puzzle B with different dimensions
+    const puzzleB = makeTestPuzzle();
+    puzzleB.width = 5;
+    puzzleB.height = 5;
+    // Expand the grid to 5x5
+    const L = (num?: number) =>
+      makeCell("letter", { number: num ?? null, solution: "B" });
+    puzzleB.grid = Array.from({ length: 5 }, () =>
+      Array.from({ length: 5 }, () => L()),
+    );
+
+    // Close puzzle A and open puzzle B
+    stopAutoSave();
+    usePuzzleStore.getState().loadPuzzle(puzzleB);
+    startAutoSave("/test/puzzleB.puz");
+
+    // Now advance past the original debounce timeout
+    vi.advanceTimersByTime(1100);
+
+    // Should NOT have saved puzzle B's data under puzzle A's path
+    // Any saves should be for puzzle B's path only
+    for (const call of mockSaveProgress.mock.calls) {
+      expect(call[0].filePath).not.toBe("/test/puzzleA.puz");
+    }
+  });
+
+  it("does not save when puzzle dimensions do not match expected", () => {
+    usePuzzleStore.getState().loadPuzzle(makeTestPuzzle());
+    startAutoSave("/test/puzzle.puz");
+
+    // Simulate a different puzzle being swapped in without going through startAutoSave
+    const differentPuzzle = makeTestPuzzle();
+    differentPuzzle.width = 5;
+    differentPuzzle.height = 5;
+    const L = () => makeCell("letter", { solution: "B" });
+    differentPuzzle.grid = Array.from({ length: 5 }, () =>
+      Array.from({ length: 5 }, () => L()),
+    );
+    // Force-load a different-sized puzzle into the store
+    usePuzzleStore.getState().loadPuzzle(differentPuzzle);
+
+    vi.advanceTimersByTime(1100);
+
+    // The dimension guard should prevent saving
+    expect(mockSaveProgress).not.toHaveBeenCalled();
   });
 });

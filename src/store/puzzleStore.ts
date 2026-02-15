@@ -21,6 +21,8 @@ export interface PuzzleState {
   isSolved: boolean;
   /** Whether every cell is filled but the solution is incorrect. */
   showIncorrectNotice: boolean;
+  /** True only when the user just solved the puzzle (not on restore). Reset by dismissJustSolved(). */
+  justSolved: boolean;
 
   // Pencil mode
   isPencilMode: boolean;
@@ -42,8 +44,10 @@ export interface PuzzleState {
   resumeTimer: () => void;
   resetTimer: () => void;
   checkSolution: () => void;
+  dismissJustSolved: () => void;
   dismissIncorrectNotice: () => void;
   resetPuzzle: () => void;
+  closePuzzle: () => void;
 
   // Check/Reveal
   checkCell: (row: number, col: number) => void;
@@ -75,6 +79,7 @@ export const usePuzzleStore = create<PuzzleState>()(
     timerRunning: false,
     isSolved: false,
     showIncorrectNotice: false,
+    justSolved: false,
     isPencilMode: false,
     pencilCells: {},
     isRebusMode: false,
@@ -200,6 +205,7 @@ export const usePuzzleStore = create<PuzzleState>()(
         info(`Puzzle solved in ${get().elapsedSeconds}s`);
         set((state) => {
           state.isSolved = true;
+          state.justSolved = true;
           state.timerRunning = false;
         });
       } else if (allFilled) {
@@ -207,6 +213,12 @@ export const usePuzzleStore = create<PuzzleState>()(
           state.showIncorrectNotice = true;
         });
       }
+    },
+
+    dismissJustSolved: () => {
+      set((state) => {
+        state.justSolved = false;
+      });
     },
 
     dismissIncorrectNotice: () => {
@@ -238,6 +250,7 @@ export const usePuzzleStore = create<PuzzleState>()(
               state.elapsedSeconds = 0;
               state.timerRunning = true;
               state.isSolved = false;
+              state.justSolved = false;
               state.showIncorrectNotice = false;
               state.isPencilMode = false;
               state.pencilCells = {};
@@ -248,6 +261,25 @@ export const usePuzzleStore = create<PuzzleState>()(
             }
           }
         }
+      });
+    },
+
+    closePuzzle: () => {
+      info("Puzzle closed — returning to library");
+      set((state) => {
+        state.puzzle = null;
+        state.cursor = { row: 0, col: 0 };
+        state.direction = "across";
+        state.elapsedSeconds = 0;
+        state.timerRunning = false;
+        state.isSolved = false;
+        state.justSolved = false;
+        state.showIncorrectNotice = false;
+        state.isPencilMode = false;
+        state.pencilCells = {};
+        state.isRebusMode = false;
+        state.rebusInput = "";
+        state.previousValue = null;
       });
     },
 
@@ -439,6 +471,15 @@ export const usePuzzleStore = create<PuzzleState>()(
       info("Restoring saved progress");
       set((state) => {
         if (!state.puzzle) return;
+
+        // Validate that saved progress matches this puzzle's grid size
+        const expectedCells = state.puzzle.width * state.puzzle.height;
+        if (progress.cellValues.length !== expectedCells) {
+          info(
+            `Progress grid mismatch (saved ${progress.cellValues.length} cells, expected ${expectedCells}) — skipping restore`,
+          );
+          return;
+        }
 
         // Restore cell values
         let idx = 0;
