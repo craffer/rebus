@@ -12,6 +12,7 @@ import {
   getPreviousClue,
   getNextCellAfterInput,
   isClueComplete,
+  isPuzzleFullyFilled,
 } from "./gridNavigation";
 import type { NavigationSettings } from "../types/settings";
 
@@ -505,5 +506,161 @@ describe("getNextClue / getPreviousClue with skip", () => {
     );
     // Should return starting clue since all are complete
     expect(clue.number).toBe(1);
+  });
+});
+
+describe("isPuzzleFullyFilled", () => {
+  it("returns false when puzzle has empty cells", () => {
+    const puzzle = makeTestPuzzle();
+    expect(isPuzzleFullyFilled(puzzle)).toBe(false);
+  });
+
+  it("returns false when only some cells are filled", () => {
+    const puzzle = makeTestPuzzle();
+    puzzle.grid[0][0].player_value = "A";
+    puzzle.grid[0][1].player_value = "B";
+    expect(isPuzzleFullyFilled(puzzle)).toBe(false);
+  });
+
+  it("returns true when all letter cells are filled", () => {
+    const puzzle = makeTestPuzzle();
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          puzzle.grid[r][c].player_value = "A";
+        }
+      }
+    }
+    expect(isPuzzleFullyFilled(puzzle)).toBe(true);
+  });
+
+  it("returns true even when values are wrong (filled but incorrect)", () => {
+    const puzzle = makeTestPuzzle();
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          // Fill with wrong answer — still counts as filled
+          puzzle.grid[r][c].player_value = "Z";
+        }
+      }
+    }
+    expect(isPuzzleFullyFilled(puzzle)).toBe(true);
+  });
+
+  it("ignores black cells", () => {
+    const puzzle = makeTestPuzzle();
+    // Fill all letter cells
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          puzzle.grid[r][c].player_value = "A";
+        }
+      }
+    }
+    // Black cells at (1,1), (1,3), (3,1), (3,3) should not affect result
+    expect(isPuzzleFullyFilled(puzzle)).toBe(true);
+  });
+});
+
+describe("skip-filled-clues disabled when puzzle is fully filled", () => {
+  it("getNextClue navigates normally with no skip when all cells filled", () => {
+    const puzzle = makeTestPuzzle();
+    // Fill every letter cell
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          puzzle.grid[r][c].player_value = "A";
+        }
+      }
+    }
+
+    // When puzzle is fully filled, we should NOT pass a shouldSkip,
+    // so getNextClue advances normally
+    const allFilled = isPuzzleFullyFilled(puzzle);
+    expect(allFilled).toBe(true);
+
+    const shouldSkip = allFilled
+      ? undefined
+      : (clue: import("../types/puzzle").Clue, dir: string) =>
+          isClueComplete(
+            puzzle,
+            clue,
+            dir as import("../types/puzzle").Direction,
+            {},
+            false,
+          );
+
+    const { clue, direction } = getNextClue(
+      puzzle,
+      "across",
+      puzzle.clues.across[0],
+      shouldSkip,
+    );
+    // Should advance to next clue (6-across), not get stuck
+    expect(clue.number).toBe(6);
+    expect(direction).toBe("across");
+  });
+
+  it("getPreviousClue navigates normally with no skip when all cells filled", () => {
+    const puzzle = makeTestPuzzle();
+    for (let r = 0; r < 5; r++) {
+      for (let c = 0; c < 5; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          puzzle.grid[r][c].player_value = "A";
+        }
+      }
+    }
+
+    const allFilled = isPuzzleFullyFilled(puzzle);
+    const shouldSkip = allFilled
+      ? undefined
+      : (clue: import("../types/puzzle").Clue, dir: string) =>
+          isClueComplete(
+            puzzle,
+            clue,
+            dir as import("../types/puzzle").Direction,
+            {},
+            false,
+          );
+
+    const { clue } = getPreviousClue(
+      puzzle,
+      "across",
+      puzzle.clues.across[1], // 6-across
+      shouldSkip,
+    );
+    // Should go back to 1-across, not get stuck
+    expect(clue.number).toBe(1);
+  });
+
+  it("still skips filled clues when puzzle is NOT fully filled", () => {
+    const puzzle = makeTestPuzzle();
+    // Fill only single-cell clues (6, 7, 8 across) — leave others empty
+    puzzle.grid[1][0].player_value = "A"; // 6-across
+    puzzle.grid[1][2].player_value = "A"; // 7-across
+    puzzle.grid[1][4].player_value = "A"; // 8-across
+
+    const allFilled = isPuzzleFullyFilled(puzzle);
+    expect(allFilled).toBe(false);
+
+    const shouldSkip = allFilled
+      ? undefined
+      : (clue: import("../types/puzzle").Clue, dir: string) =>
+          isClueComplete(
+            puzzle,
+            clue,
+            dir as import("../types/puzzle").Direction,
+            {},
+            false,
+          );
+
+    const { clue } = getNextClue(
+      puzzle,
+      "across",
+      puzzle.clues.across[0],
+      shouldSkip,
+    );
+    // Should skip 6, 7, 8 across and land on 9-across
+    expect(clue.number).toBe(9);
   });
 });
