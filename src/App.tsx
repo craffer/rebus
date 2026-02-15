@@ -39,8 +39,12 @@ function App() {
   }, []);
 
   // Toggle dark class on <html> for Tailwind dark: variant
+  // and sync native window theme so the title bar matches
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
+    import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
+      getCurrentWindow().setTheme(isDark ? "dark" : "light");
+    });
   }, [isDark]);
 
   // Celebration on first solve only (justSolved is set by checkSolution, not restoreProgress)

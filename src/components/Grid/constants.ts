@@ -56,7 +56,7 @@ export const DARK_COLORS: ColorPalette = {
   blackCell: "#1A1A1A",
   gridBorder: "#333333",
   cellBorder: "#333333",
-  cursorCell: "#C8A200",
+  cursorCell: "#9A7D1A",
   wordHighlight: "#2A5080",
   numberText: "#C0C0C0",
   letterText: "#EDEDED",
