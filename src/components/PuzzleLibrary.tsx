@@ -146,18 +146,18 @@ function PuzzleCard({
       }}
       className={`relative cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 ${loading ? "pointer-events-none opacity-50" : ""}`}
     >
-      {/* Assisted triangle badge — small triangle in top-right corner */}
+      {/* Assisted triangle badge */}
       {entry.isSolved && entry.usedHelp && (
         <div
-          className="absolute right-0 top-0 overflow-hidden rounded-tr-lg"
+          className="absolute right-0 top-0 h-6 w-6"
           title="Solved with assistance"
         >
           <svg
-            className="h-4 w-4 text-gray-400 dark:text-gray-500"
-            viewBox="0 0 16 16"
+            className="h-6 w-6 text-gray-300 dark:text-gray-600"
+            viewBox="0 0 24 24"
             fill="currentColor"
           >
-            <path d="M4 0 L16 0 L16 12 Z" />
+            <path d="M0 0 L24 0 L24 24 Z" />
           </svg>
         </div>
       )}

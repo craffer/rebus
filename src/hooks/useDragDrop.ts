@@ -9,6 +9,26 @@ function isPuzzleFile(path: string): boolean {
   return PUZZLE_EXTENSIONS.has(ext);
 }
 
+// Module-level flag: true while the user is dragging an internal element
+// (e.g. a puzzle card). Tauri's native onDragDropEvent fires even for
+// browser-internal HTML5 DnD — we use this flag to ignore those events.
+let internalDragActive = false;
+
+function setupInternalDragTracking() {
+  const onStart = () => {
+    internalDragActive = true;
+  };
+  const onEnd = () => {
+    internalDragActive = false;
+  };
+  window.addEventListener("dragstart", onStart);
+  window.addEventListener("dragend", onEnd);
+  return () => {
+    window.removeEventListener("dragstart", onStart);
+    window.removeEventListener("dragend", onEnd);
+  };
+}
+
 /**
  * Hook that listens for Tauri v2 drag-drop events and opens dropped puzzle files.
  * Browser native drag-drop doesn't provide file paths in Tauri v2 —
@@ -21,11 +41,17 @@ export function useDragDrop(onFilesDropped: (paths: string[]) => void): {
   const callbackRef = useRef(onFilesDropped);
   callbackRef.current = onFilesDropped;
 
+  // Track internal drag state so we can ignore Tauri events during it
+  useEffect(setupInternalDragTracking, []);
+
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
     getCurrentWebview()
       .onDragDropEvent((event) => {
+        // Ignore Tauri drag events while an internal browser drag is active
+        if (internalDragActive) return;
+
         const { type } = event.payload;
 
         if (type === "enter" || type === "over") {
@@ -56,7 +82,7 @@ export function useDragDrop(onFilesDropped: (paths: string[]) => void): {
   useEffect(() => {
     const prevent = (e: DragEvent) => {
       // Allow internal puzzle card drags (browser DnD) to proceed normally
-      if (e.dataTransfer?.types.includes("application/x-puzzle-path")) return;
+      if (internalDragActive) return;
       e.preventDefault();
     };
     window.addEventListener("dragover", prevent);
