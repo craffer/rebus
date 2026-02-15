@@ -36,6 +36,7 @@ async function loadAndOpenPuzzle(
   const completionPercent = currentPuzzle
     ? computeCompletionPercent(currentPuzzle)
     : 0;
+  const currentState = usePuzzleStore.getState();
   const entry: LibraryEntry = {
     filePath,
     puzzleId: puzzleIdFromPath(filePath),
@@ -44,6 +45,7 @@ async function loadAndOpenPuzzle(
     dateOpened: Date.now(),
     completionPercent,
     isSolved: progress?.isSolved ?? false,
+    elapsedSeconds: currentState.elapsedSeconds,
     width: puzzle.width,
     height: puzzle.height,
   };

@@ -8,6 +8,7 @@ export interface LibraryEntry {
   dateOpened: number; // Date.now() timestamp
   completionPercent: number; // 0-100
   isSolved: boolean;
+  elapsedSeconds: number; // time spent solving
   width: number;
   height: number;
 }

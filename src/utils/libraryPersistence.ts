@@ -27,7 +27,10 @@ export async function loadLibrary(): Promise<LibraryEntry[]> {
 
 export async function saveLibrary(entries: LibraryEntry[]): Promise<void> {
   try {
-    await mkdir("", { baseDir: BASE_DIR, recursive: true });
+    const dirExists = await exists("", { baseDir: BASE_DIR });
+    if (!dirExists) {
+      await mkdir("", { baseDir: BASE_DIR, recursive: true });
+    }
     await writeTextFile(LIBRARY_FILE, JSON.stringify(entries, null, 2), {
       baseDir: BASE_DIR,
     });

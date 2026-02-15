@@ -1,8 +1,8 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect, useMemo } from "react";
 import {
   useLibraryStore,
-  selectFilteredEntries,
   getEntryStatus,
+  filterAndSortEntries,
 } from "../store/libraryStore";
 import type {
   LibraryEntry,
@@ -28,6 +28,16 @@ const STATUS_COLORS: Record<PuzzleStatus, string> = {
   completed:
     "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
 };
+
+function formatTime(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`;
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  if (mins < 60) return `${mins}:${secs.toString().padStart(2, "0")}`;
+  const hrs = Math.floor(mins / 60);
+  const remainMins = mins % 60;
+  return `${hrs}:${remainMins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+}
 
 function formatDate(timestamp: number): string {
   const date = new Date(timestamp);
@@ -110,6 +120,9 @@ function PuzzleCard({
         <span>
           {entry.width}&times;{entry.height}
         </span>
+        {entry.elapsedSeconds > 0 && (
+          <span>{formatTime(entry.elapsedSeconds)}</span>
+        )}
         <span>{formatDate(entry.dateOpened)}</span>
       </div>
 
@@ -169,10 +182,14 @@ export default function PuzzleLibrary({
   onOpenPuzzle,
   loading,
 }: PuzzleLibraryProps) {
-  const entries = useLibraryStore(selectFilteredEntries);
+  const rawEntries = useLibraryStore((s) => s.entries);
   const sortField = useLibraryStore((s) => s.sortField);
   const sortOrder = useLibraryStore((s) => s.sortOrder);
   const filterStatus = useLibraryStore((s) => s.filterStatus);
+  const entries = useMemo(
+    () => filterAndSortEntries(rawEntries, filterStatus, sortField, sortOrder),
+    [rawEntries, filterStatus, sortField, sortOrder],
+  );
   const setSortField = useLibraryStore((s) => s.setSortField);
   const setSortOrder = useLibraryStore((s) => s.setSortOrder);
   const setFilterStatus = useLibraryStore((s) => s.setFilterStatus);

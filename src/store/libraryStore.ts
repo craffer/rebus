@@ -99,19 +99,22 @@ export const useLibraryStore = create<LibraryState>()(
   })),
 );
 
-/** Get filtered and sorted entries. */
-export function selectFilteredEntries(state: LibraryState): LibraryEntry[] {
-  let entries = [...state.entries];
+/** Filter and sort entries — pure function safe for useMemo. */
+export function filterAndSortEntries(
+  entries: LibraryEntry[],
+  filterStatus: LibraryFilterStatus,
+  sortField: LibrarySortField,
+  sortOrder: LibrarySortOrder,
+): LibraryEntry[] {
+  let result = [...entries];
 
-  // Filter
-  if (state.filterStatus !== "all") {
-    entries = entries.filter((e) => getEntryStatus(e) === state.filterStatus);
+  if (filterStatus !== "all") {
+    result = result.filter((e) => getEntryStatus(e) === filterStatus);
   }
 
-  // Sort
-  entries.sort((a, b) => {
+  result.sort((a, b) => {
     let cmp = 0;
-    switch (state.sortField) {
+    switch (sortField) {
       case "dateOpened":
         cmp = a.dateOpened - b.dateOpened;
         break;
@@ -128,8 +131,8 @@ export function selectFilteredEntries(state: LibraryState): LibraryEntry[] {
         break;
       }
     }
-    return state.sortOrder === "asc" ? cmp : -cmp;
+    return sortOrder === "asc" ? cmp : -cmp;
   });
 
-  return entries;
+  return result;
 }

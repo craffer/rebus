@@ -2,10 +2,9 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   useLibraryStore,
   getEntryStatus,
-  selectFilteredEntries,
+  filterAndSortEntries,
 } from "./libraryStore";
 import type { LibraryEntry } from "../types/library";
-import type { LibraryState } from "./libraryStore";
 
 // Mock Tauri plugins so the store doesn't try to hit the filesystem or logger
 vi.mock("../utils/libraryPersistence", () => ({
@@ -27,6 +26,7 @@ function makeEntry(overrides: Partial<LibraryEntry> = {}): LibraryEntry {
     dateOpened: Date.now(),
     completionPercent: 0,
     isSolved: false,
+    elapsedSeconds: 0,
     width: 15,
     height: 15,
     ...overrides,
@@ -130,7 +130,7 @@ describe("libraryStore", () => {
   });
 });
 
-describe("selectFilteredEntries", () => {
+describe("filterAndSortEntries", () => {
   const entries: LibraryEntry[] = [
     makeEntry({
       filePath: "/a.puz",
@@ -155,88 +155,76 @@ describe("selectFilteredEntries", () => {
     }),
   ];
 
-  function makeState(overrides: Partial<LibraryState> = {}): LibraryState {
-    return {
-      entries,
-      loaded: true,
-      sortField: "dateOpened",
-      sortOrder: "desc",
-      filterStatus: "all",
-      _initLibrary: async () => {},
-      addOrUpdateEntry: () => {},
-      removeEntry: () => {},
-      setSortField: () => {},
-      setSortOrder: () => {},
-      setFilterStatus: () => {},
-      ...overrides,
-    };
-  }
-
   it("returns all entries when filter is 'all'", () => {
-    const result = selectFilteredEntries(makeState());
+    const result = filterAndSortEntries(entries, "all", "dateOpened", "desc");
     expect(result).toHaveLength(3);
   });
 
   it("filters by 'in_progress'", () => {
-    const result = selectFilteredEntries(
-      makeState({ filterStatus: "in_progress" }),
+    const result = filterAndSortEntries(
+      entries,
+      "in_progress",
+      "dateOpened",
+      "desc",
     );
     expect(result).toHaveLength(1);
     expect(result[0].title).toBe("Alpha");
   });
 
   it("filters by 'not_started'", () => {
-    const result = selectFilteredEntries(
-      makeState({ filterStatus: "not_started" }),
+    const result = filterAndSortEntries(
+      entries,
+      "not_started",
+      "dateOpened",
+      "desc",
     );
     expect(result).toHaveLength(1);
     expect(result[0].title).toBe("Bravo");
   });
 
   it("filters by 'completed'", () => {
-    const result = selectFilteredEntries(
-      makeState({ filterStatus: "completed" }),
+    const result = filterAndSortEntries(
+      entries,
+      "completed",
+      "dateOpened",
+      "desc",
     );
     expect(result).toHaveLength(1);
     expect(result[0].title).toBe("Charlie");
   });
 
   it("sorts by dateOpened descending (default)", () => {
-    const result = selectFilteredEntries(makeState());
+    const result = filterAndSortEntries(entries, "all", "dateOpened", "desc");
     expect(result.map((e) => e.title)).toEqual(["Alpha", "Charlie", "Bravo"]);
   });
 
   it("sorts by dateOpened ascending", () => {
-    const result = selectFilteredEntries(makeState({ sortOrder: "asc" }));
+    const result = filterAndSortEntries(entries, "all", "dateOpened", "asc");
     expect(result.map((e) => e.title)).toEqual(["Bravo", "Charlie", "Alpha"]);
   });
 
   it("sorts by title ascending", () => {
-    const result = selectFilteredEntries(
-      makeState({ sortField: "title", sortOrder: "asc" }),
-    );
+    const result = filterAndSortEntries(entries, "all", "title", "asc");
     expect(result.map((e) => e.title)).toEqual(["Alpha", "Bravo", "Charlie"]);
   });
 
   it("sorts by title descending", () => {
-    const result = selectFilteredEntries(
-      makeState({ sortField: "title", sortOrder: "desc" }),
-    );
+    const result = filterAndSortEntries(entries, "all", "title", "desc");
     expect(result.map((e) => e.title)).toEqual(["Charlie", "Bravo", "Alpha"]);
   });
 
   it("sorts by status (in_progress first, then not_started, then completed)", () => {
-    const result = selectFilteredEntries(
-      makeState({ sortField: "status", sortOrder: "asc" }),
-    );
+    const result = filterAndSortEntries(entries, "all", "status", "asc");
     expect(result.map((e) => e.title)).toEqual(["Alpha", "Bravo", "Charlie"]);
   });
 
   it("returns empty array when filter matches nothing", () => {
-    const state = makeState({
-      entries: [makeEntry({ completionPercent: 0, isSolved: false })],
-      filterStatus: "completed",
-    });
-    expect(selectFilteredEntries(state)).toHaveLength(0);
+    const result = filterAndSortEntries(
+      [makeEntry({ completionPercent: 0, isSolved: false })],
+      "completed",
+      "dateOpened",
+      "desc",
+    );
+    expect(result).toHaveLength(0);
   });
 });
