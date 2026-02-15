@@ -26,6 +26,8 @@ function App() {
 
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [wasTimerRunningBeforeSettings, setWasTimerRunningBeforeSettings] =
+    useState(false);
 
   useKeyboardNavigation();
   useTimer();
@@ -80,8 +82,25 @@ function App() {
   }, [puzzle?.title]);
 
   const dismissCelebration = useCallback(() => setShowCelebration(false), []);
-  const openSettings = useCallback(() => setShowSettings(true), []);
-  const closeSettings = useCallback(() => setShowSettings(false), []);
+  const openSettings = useCallback(() => {
+    // Pause timer when opening settings and remember if it was running
+    const wasRunning = usePuzzleStore.getState().timerRunning;
+    setWasTimerRunningBeforeSettings(wasRunning);
+    if (wasRunning) {
+      usePuzzleStore.getState().pauseTimer();
+    }
+    setShowSettings(true);
+  }, []);
+  const closeSettings = useCallback(() => {
+    // Resume timer only if it was running before we opened settings
+    if (wasTimerRunningBeforeSettings) {
+      const state = usePuzzleStore.getState();
+      if (state.puzzle && !state.isSolved) {
+        state.resumeTimer();
+      }
+    }
+    setShowSettings(false);
+  }, [wasTimerRunningBeforeSettings]);
   const goHome = useCallback(() => {
     flushAutoSave();
     stopAutoSave();

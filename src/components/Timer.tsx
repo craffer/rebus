@@ -15,10 +15,31 @@ export default function Timer() {
   return (
     <button
       onClick={() => (timerRunning ? pauseTimer() : resumeTimer())}
-      className="flex items-center gap-1 rounded px-2 py-1 text-sm font-mono text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+      className="flex items-center gap-1.5 rounded px-2 py-1 text-sm font-mono text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
       title={timerRunning ? "Pause timer" : "Resume timer"}
     >
-      <span>{timerRunning ? "\u23F1" : "\u23F8"}</span>
+      {timerRunning ? (
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          stroke="none"
+        >
+          <rect x="6" y="4" width="4" height="16" />
+          <rect x="14" y="4" width="4" height="16" />
+        </svg>
+      ) : (
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          stroke="none"
+        >
+          <path d="M8 5v14l11-7z" />
+        </svg>
+      )}
       <span>{formatTime(elapsedSeconds)}</span>
     </button>
   );
