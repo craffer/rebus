@@ -72,9 +72,7 @@ function makeTestPuzzle(): Puzzle {
   const across: Clue[] = [
     { number: 1, text: "Clue", row: 0, col: 0, length: 1 },
   ];
-  const down: Clue[] = [
-    { number: 1, text: "Clue", row: 0, col: 0, length: 1 },
-  ];
+  const down: Clue[] = [{ number: 1, text: "Clue", row: 0, col: 0, length: 1 }];
 
   return {
     title: "Test",
