@@ -5,9 +5,10 @@ import Timer from "./Timer";
 
 interface ToolbarProps {
   onOpenSettings?: () => void;
+  onGoHome?: () => void;
 }
 
-export default function Toolbar({ onOpenSettings }: ToolbarProps) {
+export default function Toolbar({ onOpenSettings, onGoHome }: ToolbarProps) {
   const puzzle = usePuzzleStore((s) => s.puzzle);
   const isSolved = usePuzzleStore((s) => s.isSolved);
   const isPencilMode = usePuzzleStore((s) => s.isPencilMode);
@@ -45,6 +46,27 @@ export default function Toolbar({ onOpenSettings }: ToolbarProps) {
   return (
     <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2 dark:border-gray-700 dark:bg-gray-800">
       <div className="flex items-center gap-4">
+        {puzzle && onGoHome && (
+          <button
+            onClick={onGoHome}
+            className="rounded p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            title="Back to library"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          </button>
+        )}
         <button onClick={openPuzzleFile} className={btnClass}>
           Open
         </button>

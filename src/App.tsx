@@ -1,11 +1,13 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { usePuzzleStore } from "./store/puzzleStore";
 import { useSettingsStore } from "./store/settingsStore";
+import { useLibraryStore } from "./store/libraryStore";
 import { usePuzzleLoader } from "./hooks/usePuzzleLoader";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
 import { useTimer } from "./hooks/useTimer";
 import { useIsDarkMode } from "./hooks/useTheme";
 import { playCelebrationSound } from "./utils/celebrationSound";
+import { flushAutoSave, stopAutoSave } from "./utils/progressAutoSave";
 import Grid from "./components/Grid/Grid";
 import CluePanel from "./components/CluePanel/CluePanel";
 import Toolbar from "./components/Toolbar";
@@ -16,6 +18,7 @@ import SettingsPanel from "./components/SettingsPanel";
 function App() {
   const puzzle = usePuzzleStore((s) => s.puzzle);
   const isSolved = usePuzzleStore((s) => s.isSolved);
+  const justSolved = usePuzzleStore((s) => s.justSolved);
   const showIncorrectNotice = usePuzzleStore((s) => s.showIncorrectNotice);
   const timerRunning = usePuzzleStore((s) => s.timerRunning);
   const { openPuzzleFile } = usePuzzleLoader();
@@ -23,14 +26,14 @@ function App() {
 
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const prevSolvedRef = useRef(false);
 
   useKeyboardNavigation();
   useTimer();
 
-  // Load persisted settings from disk on app startup
+  // Load persisted settings and library from disk on app startup
   useEffect(() => {
     useSettingsStore.getState()._initSettings();
+    useLibraryStore.getState()._initLibrary();
   }, []);
 
   // Toggle dark class on <html> for Tailwind dark: variant
@@ -38,18 +41,18 @@ function App() {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
 
-  // Celebration on solve (transition from false → true)
+  // Celebration on first solve only (justSolved is set by checkSolution, not restoreProgress)
   useEffect(() => {
-    if (isSolved && !prevSolvedRef.current) {
+    if (justSolved) {
       setShowCelebration(true);
       const playSoundOnSolve =
         useSettingsStore.getState().settings.feedback.play_sound_on_solve;
       if (playSoundOnSolve) {
         playCelebrationSound();
       }
+      usePuzzleStore.getState().dismissJustSolved();
     }
-    prevSolvedRef.current = isSolved;
-  }, [isSolved]);
+  }, [justSolved]);
 
   // Cmd+O / Ctrl+O to open a puzzle, Cmd+, to open settings
   useEffect(() => {
@@ -79,11 +82,18 @@ function App() {
   const dismissCelebration = useCallback(() => setShowCelebration(false), []);
   const openSettings = useCallback(() => setShowSettings(true), []);
   const closeSettings = useCallback(() => setShowSettings(false), []);
+  const goHome = useCallback(() => {
+    flushAutoSave();
+    stopAutoSave();
+    usePuzzleStore.getState().closePuzzle();
+    setShowCelebration(false);
+    document.title = "Rebus";
+  }, []);
 
   if (!puzzle) {
     return (
       <div className="flex h-screen flex-col">
-        <Toolbar onOpenSettings={openSettings} />
+        <Toolbar onOpenSettings={openSettings} onGoHome={goHome} />
         <WelcomeScreen />
         {showSettings && <SettingsPanel onClose={closeSettings} />}
       </div>
@@ -94,7 +104,7 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-gray-900">
-      <Toolbar onOpenSettings={openSettings} />
+      <Toolbar onOpenSettings={openSettings} onGoHome={goHome} />
       <div className="flex min-h-0 flex-1">
         {/* Grid area */}
         <div className="relative flex min-h-0 min-w-0 flex-1">

@@ -303,7 +303,7 @@ describe("checkSolution", () => {
     usePuzzleStore.getState().loadPuzzle(makeTestPuzzle());
   });
 
-  it("sets isSolved when all cells are correctly filled", () => {
+  it("sets isSolved and justSolved when all cells are correctly filled", () => {
     const puzzle = usePuzzleStore.getState().puzzle!;
     for (let r = 0; r < puzzle.height; r++) {
       for (let c = 0; c < puzzle.width; c++) {
@@ -316,6 +316,7 @@ describe("checkSolution", () => {
     }
     usePuzzleStore.getState().checkSolution();
     expect(usePuzzleStore.getState().isSolved).toBe(true);
+    expect(usePuzzleStore.getState().justSolved).toBe(true);
     expect(usePuzzleStore.getState().timerRunning).toBe(false);
   });
 
@@ -752,6 +753,50 @@ describe("restoreProgress", () => {
     usePuzzleStore.getState().restoreProgress(progress);
     expect(usePuzzleStore.getState().timerRunning).toBe(false);
     expect(usePuzzleStore.getState().isSolved).toBe(true);
+  });
+
+  it("skips restore when cellValues length does not match grid size", () => {
+    // Progress from a 3x3 puzzle (9 cells) applied to a 5x5 puzzle (25 cells)
+    const progress: PuzzleProgress = {
+      puzzleId: "test",
+      filePath: "/test.puz",
+      title: "Test",
+      cellValues: new Array(9).fill("Z"), // wrong size for 5x5
+      pencilCells: [],
+      incorrectCells: [],
+      revealedCells: [],
+      elapsedSeconds: 999,
+      isSolved: true,
+      lastSaved: Date.now(),
+    };
+
+    usePuzzleStore.getState().restoreProgress(progress);
+    const state = usePuzzleStore.getState();
+    // Cell values should not have been touched
+    expect(state.puzzle!.grid[0][0].player_value).toBeNull();
+    // Timer and solved state should not have been overwritten
+    expect(state.elapsedSeconds).toBe(0);
+    expect(state.isSolved).toBe(false);
+  });
+
+  it("does not set justSolved when restoring a completed puzzle", () => {
+    const cellValues = new Array(25).fill("A");
+    const progress: PuzzleProgress = {
+      puzzleId: "test",
+      filePath: "/test.puz",
+      title: "Test",
+      cellValues,
+      pencilCells: [],
+      incorrectCells: [],
+      revealedCells: [],
+      elapsedSeconds: 100,
+      isSolved: true,
+      lastSaved: Date.now(),
+    };
+
+    usePuzzleStore.getState().restoreProgress(progress);
+    expect(usePuzzleStore.getState().isSolved).toBe(true);
+    expect(usePuzzleStore.getState().justSolved).toBe(false);
   });
 });
 
