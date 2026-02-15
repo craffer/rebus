@@ -1,14 +1,8 @@
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { usePuzzleLoader } from "../hooks/usePuzzleLoader";
+import { useDragDrop } from "../hooks/useDragDrop";
 import { useLibraryStore } from "../store/libraryStore";
 import PuzzleLibrary from "./PuzzleLibrary";
-
-const PUZZLE_EXTENSIONS = new Set(["puz", "ipuz", "jpz", "xml"]);
-
-function isPuzzleFile(name: string): boolean {
-  const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  return PUZZLE_EXTENSIONS.has(ext);
-}
 
 export default function WelcomeScreen() {
   const { openPuzzleFile, openPuzzleByPath, error, loading } =
@@ -16,7 +10,6 @@ export default function WelcomeScreen() {
   const libraryLoaded = useLibraryStore((s) => s.loaded);
   const hasEntries = useLibraryStore((s) => s.entries.length > 0);
   const hasFolders = useLibraryStore((s) => s.folders.length > 0);
-  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDropFiles = useCallback(
     async (paths: string[]) => {
@@ -27,46 +20,13 @@ export default function WelcomeScreen() {
     [openPuzzleByPath],
   );
 
-  // Drag-and-drop on the whole welcome screen (for when library is empty)
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragOver(false);
-
-      const files = Array.from(e.dataTransfer.files);
-      const paths: string[] = [];
-      for (const file of files) {
-        if (isPuzzleFile(file.name)) {
-          const filePath = (file as File & { path?: string }).path ?? file.name;
-          paths.push(filePath);
-        }
-      }
-      if (paths.length > 0) {
-        handleDropFiles(paths);
-      }
-    },
-    [handleDropFiles],
-  );
+  // Tauri v2 drag-drop: listens for native file drop events
+  const { isDragOver } = useDragDrop(handleDropFiles);
 
   const showLibrary = libraryLoaded && (hasEntries || hasFolders);
 
   return (
-    <div
-      className="flex flex-1 flex-col overflow-y-auto bg-white dark:bg-gray-900"
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
+    <div className="flex flex-1 flex-col overflow-y-auto bg-white dark:bg-gray-900">
       {/* Hero section */}
       <div
         className={`text-center ${showLibrary ? "pb-6 pt-10" : "flex flex-1 flex-col items-center justify-center"}`}
@@ -95,8 +55,8 @@ export default function WelcomeScreen() {
           </p>
         )}
 
-        {/* Drop zone hint when no library yet */}
-        {!showLibrary && isDragOver && (
+        {/* Drop zone hint */}
+        {isDragOver && (
           <div className="mx-auto mt-6 w-full max-w-md rounded-xl border-2 border-dashed border-blue-400 bg-blue-50 p-8 dark:border-blue-500 dark:bg-blue-900/30">
             <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
               Drop puzzle files here to import
@@ -110,7 +70,7 @@ export default function WelcomeScreen() {
         <div className="pb-8">
           <PuzzleLibrary
             onOpenPuzzle={openPuzzleByPath}
-            onDropFiles={handleDropFiles}
+            isDragOver={isDragOver}
             loading={loading}
           />
         </div>

@@ -16,7 +16,7 @@ import type {
 
 interface PuzzleLibraryProps {
   onOpenPuzzle: (filePath: string) => void;
-  onDropFiles?: (filePaths: string[]) => void;
+  isDragOver?: boolean;
   loading: boolean;
 }
 
@@ -32,24 +32,6 @@ const STATUS_COLORS: Record<PuzzleStatus, string> = {
   completed:
     "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
 };
-
-function SolveQualityBadge({ entry }: { entry: LibraryEntry }) {
-  if (!entry.isSolved) return null;
-
-  if (entry.usedHelp) {
-    return (
-      <span className="ml-1.5 inline-block rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">
-        Assisted
-      </span>
-    );
-  }
-
-  return (
-    <span className="ml-1.5 inline-block rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300">
-      Clean Solve
-    </span>
-  );
-}
 
 function PuzzleCard({
   entry,
@@ -131,21 +113,39 @@ function PuzzleCard({
     [confirmRename],
   );
 
+  const handleDragStart = useCallback(
+    (e: React.DragEvent) => {
+      e.dataTransfer.setData("application/x-puzzle-path", entry.filePath);
+      e.dataTransfer.effectAllowed = "move";
+    },
+    [entry.filePath],
+  );
+
   return (
-    <button
+    <div
+      draggable={!isRenaming}
+      onDragStart={handleDragStart}
+      role="button"
+      tabIndex={0}
       onClick={() => !isRenaming && onOpen(entry.filePath)}
       onContextMenu={handleContextMenu}
-      disabled={loading}
-      className="relative rounded-lg border border-gray-200 bg-white p-4 text-left transition-shadow hover:shadow-md disabled:opacity-50 dark:border-gray-700 dark:bg-gray-800"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !isRenaming) onOpen(entry.filePath);
+      }}
+      className={`relative cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 ${loading ? "pointer-events-none opacity-50" : ""}`}
     >
       {/* Status badge + solve quality */}
-      <div className="flex flex-wrap items-center">
+      <div className="flex flex-wrap items-center gap-1.5">
         <span
           className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]}`}
         >
           {STATUS_LABELS[status]}
         </span>
-        <SolveQualityBadge entry={entry} />
+        {entry.isSolved && entry.usedHelp && (
+          <span className="text-xs italic text-gray-400 dark:text-gray-500">
+            assisted
+          </span>
+        )}
       </div>
 
       {/* Title (editable when renaming) */}
@@ -188,9 +188,7 @@ function PuzzleCard({
         <div
           className={`h-full rounded-full transition-all ${
             status === "completed"
-              ? entry.usedHelp
-                ? "bg-yellow-500"
-                : "bg-green-500"
+              ? "bg-green-500"
               : entry.completionPercent > 0
                 ? "bg-blue-500"
                 : "bg-gray-300 dark:bg-gray-600"
@@ -265,7 +263,7 @@ function PuzzleCard({
           </button>
         </div>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -275,16 +273,19 @@ function FolderCard({
   onOpen,
   onRename,
   onRemove,
+  onDropPuzzle,
 }: {
   folder: LibraryFolder;
   entryCount: number;
   onOpen: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onRemove: (id: string) => void;
+  onDropPuzzle: (filePath: string, folderId: string) => void;
 }) {
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
+  const [isDragTarget, setIsDragTarget] = useState(false);
   const contextMenuRef = useRef<HTMLDivElement>(null);
   const renameInputRef = useRef<HTMLInputElement>(null);
 
@@ -328,11 +329,47 @@ function FolderCard({
     setIsRenaming(false);
   }, [renameValue, folder.id, folder.name, onRename]);
 
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    if (e.dataTransfer.types.includes("application/x-puzzle-path")) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      setIsDragTarget(true);
+    }
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setIsDragTarget(false);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragTarget(false);
+      const filePath = e.dataTransfer.getData("application/x-puzzle-path");
+      if (filePath) {
+        onDropPuzzle(filePath, folder.id);
+      }
+    },
+    [folder.id, onDropPuzzle],
+  );
+
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => !isRenaming && onOpen(folder.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" && !isRenaming) onOpen(folder.id);
+      }}
       onContextMenu={handleContextMenu}
-      className="relative flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-left transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800/50"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`relative flex cursor-pointer items-center gap-3 rounded-lg border p-4 text-left transition-shadow hover:shadow-md ${
+        isDragTarget
+          ? "border-blue-400 bg-blue-50 ring-2 ring-blue-300 dark:border-blue-500 dark:bg-blue-900/30 dark:ring-blue-600"
+          : "border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/50"
+      }`}
     >
       {/* Folder icon */}
       <svg
@@ -397,7 +434,7 @@ function FolderCard({
           </button>
         </div>
       )}
-    </button>
+    </div>
   );
 }
 
@@ -414,16 +451,9 @@ const FILTER_OPTIONS: { value: LibraryFilterStatus; label: string }[] = [
   { value: "completed", label: "Completed" },
 ];
 
-const PUZZLE_EXTENSIONS = new Set(["puz", "ipuz", "jpz", "xml"]);
-
-function isPuzzleFile(name: string): boolean {
-  const ext = name.split(".").pop()?.toLowerCase() ?? "";
-  return PUZZLE_EXTENSIONS.has(ext);
-}
-
 export default function PuzzleLibrary({
   onOpenPuzzle,
-  onDropFiles,
+  isDragOver,
   loading,
 }: PuzzleLibraryProps) {
   const rawEntries = useLibraryStore((s) => s.entries);
@@ -455,7 +485,6 @@ export default function PuzzleLibrary({
   const setCurrentFolder = useLibraryStore((s) => s.setCurrentFolder);
   const totalCount = useLibraryStore((s) => s.entries.length);
 
-  const [isDragOver, setIsDragOver] = useState(false);
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const newFolderRef = useRef<HTMLInputElement>(null);
@@ -493,52 +522,6 @@ export default function PuzzleLibrary({
     [sortField, sortOrder, setSortField, setSortOrder],
   );
 
-  // Drag-and-drop handlers
-  const handleDragOver = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragOver(false);
-
-      if (!onDropFiles) return;
-
-      const files = Array.from(e.dataTransfer.files);
-      const puzzleFiles = files
-        .filter((f) => isPuzzleFile(f.name))
-        .map((f) => f.name);
-
-      // For Tauri, file paths come through dataTransfer.files
-      // Use the webkitRelativePath or name — Tauri provides full paths
-      const paths: string[] = [];
-      for (const file of files) {
-        if (isPuzzleFile(file.name)) {
-          // In Tauri, File objects from drag-drop have a `path` property
-          const filePath = (file as File & { path?: string }).path ?? file.name;
-          paths.push(filePath);
-        }
-      }
-
-      if (paths.length > 0) {
-        onDropFiles(paths);
-      } else if (puzzleFiles.length === 0 && files.length > 0) {
-        // Files were dropped but none are puzzle files — no-op
-      }
-    },
-    [onDropFiles],
-  );
-
   const handleCreateFolder = useCallback(() => {
     const trimmed = newFolderName.trim();
     if (trimmed) {
@@ -547,6 +530,13 @@ export default function PuzzleLibrary({
     setNewFolderName("");
     setShowNewFolder(false);
   }, [newFolderName, addFolder, currentFolderId]);
+
+  const handleDropPuzzleOnFolder = useCallback(
+    (filePath: string, folderId: string) => {
+      moveEntry(filePath, folderId);
+    },
+    [moveEntry],
+  );
 
   if (totalCount === 0 && folders.length === 0) {
     return null;
@@ -563,9 +553,6 @@ export default function PuzzleLibrary({
           ? "rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/50 dark:border-blue-500 dark:bg-blue-900/20"
           : ""
       }`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
     >
       {/* Header */}
       <div className="mb-4 flex items-center justify-between">
@@ -680,7 +667,7 @@ export default function PuzzleLibrary({
         </div>
       )}
 
-      {/* Drag-and-drop hint */}
+      {/* Drag-and-drop hint (from Tauri file drop) */}
       {isDragOver && (
         <div className="mb-4 rounded-lg border-2 border-dashed border-blue-400 bg-blue-50 p-6 text-center dark:border-blue-500 dark:bg-blue-900/30">
           <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
@@ -703,6 +690,7 @@ export default function PuzzleLibrary({
               onOpen={setCurrentFolder}
               onRename={renameFolderAction}
               onRemove={removeFolderAction}
+              onDropPuzzle={handleDropPuzzleOnFolder}
             />
           ))}
         </div>
