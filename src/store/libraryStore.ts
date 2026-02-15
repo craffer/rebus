@@ -30,11 +30,6 @@ export interface LibraryState {
   removeEntry: (filePath: string) => void;
   renameEntry: (filePath: string, customTitle: string) => void;
   moveEntry: (filePath: string, folderId: string | undefined) => void;
-  reorderEntry: (
-    filePath: string,
-    targetFilePath: string,
-    position: "before" | "after",
-  ) => void;
   addFolder: (name: string, parentId?: string) => LibraryFolder;
   renameFolder: (id: string, name: string) => void;
   removeFolder: (id: string) => void;
@@ -148,63 +143,6 @@ export const useLibraryStore = create<LibraryState>()(
       debouncedSave(get().entries);
     },
 
-    reorderEntry: (
-      filePath: string,
-      targetFilePath: string,
-      position: "before" | "after",
-    ) => {
-      if (filePath === targetFilePath) return;
-      set((state) => {
-        const entry = state.entries.find((e) => e.filePath === filePath);
-        const target = state.entries.find((e) => e.filePath === targetFilePath);
-        if (!entry || !target) return;
-
-        // Ensure all entries in the same folder have manualOrder values
-        const folderId = entry.folderId;
-        const folderEntries = state.entries.filter(
-          (e) => e.folderId === folderId,
-        );
-        // Initialize manualOrder for entries that don't have one
-        const needsInit = folderEntries.some((e) => e.manualOrder == null);
-        if (needsInit) {
-          // Sort by dateOpened desc to establish initial order
-          const sorted = [...folderEntries].sort(
-            (a, b) => b.dateOpened - a.dateOpened,
-          );
-          sorted.forEach((e, i) => {
-            const storeEntry = state.entries.find(
-              (se) => se.filePath === e.filePath,
-            );
-            if (storeEntry && storeEntry.manualOrder == null) {
-              storeEntry.manualOrder = i;
-            }
-          });
-        }
-
-        // Get target's order value
-        const targetOrder = target.manualOrder ?? 0;
-
-        // Set the dragged entry's order to just before or after target
-        if (position === "before") {
-          entry.manualOrder = targetOrder - 0.5;
-        } else {
-          entry.manualOrder = targetOrder + 0.5;
-        }
-
-        // Re-normalize manualOrder values for all entries in this folder
-        const updated = state.entries
-          .filter((e) => e.folderId === folderId)
-          .sort((a, b) => (a.manualOrder ?? 0) - (b.manualOrder ?? 0));
-        updated.forEach((e, i) => {
-          const storeEntry = state.entries.find(
-            (se) => se.filePath === e.filePath,
-          );
-          if (storeEntry) storeEntry.manualOrder = i;
-        });
-      });
-      debouncedSave(get().entries);
-    },
-
     addFolder: (name: string, parentId?: string): LibraryFolder => {
       const folder: LibraryFolder = {
         id: `folder-${nextFolderId++}`,
@@ -313,9 +251,6 @@ export function filterAndSortEntries(
         cmp = order[getEntryStatus(a)] - order[getEntryStatus(b)];
         break;
       }
-      case "manual":
-        cmp = (a.manualOrder ?? 0) - (b.manualOrder ?? 0);
-        break;
     }
     return sortOrder === "asc" ? cmp : -cmp;
   });

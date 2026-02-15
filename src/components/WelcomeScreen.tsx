@@ -30,8 +30,10 @@ export default function WelcomeScreen() {
     };
   }, []);
 
-  // Drag-drop imports files to library WITHOUT opening them
+  // Drag-drop imports files to library WITHOUT opening them.
+  // If currently viewing a folder, import into that folder.
   const handleDropFiles = useCallback(async (paths: string[]) => {
+    const currentFolderId = useLibraryStore.getState().currentFolderId;
     for (const path of paths) {
       try {
         // Parse the puzzle to get metadata, but don't open it in the solver
@@ -50,6 +52,7 @@ export default function WelcomeScreen() {
           elapsedSeconds: 0,
           width: puzzle.width,
           height: puzzle.height,
+          folderId: currentFolderId,
         };
         useLibraryStore.getState().addOrUpdateEntry(entry);
         info(`Imported to library: ${path.split("/").pop()}`);
