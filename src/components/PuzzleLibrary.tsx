@@ -4,6 +4,7 @@ import {
   getEntryStatus,
   filterAndSortEntries,
 } from "../store/libraryStore";
+import { formatTime, formatDate } from "../utils/formatting";
 import type {
   LibraryEntry,
   PuzzleStatus,
@@ -28,32 +29,6 @@ const STATUS_COLORS: Record<PuzzleStatus, string> = {
   completed:
     "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
 };
-
-function formatTime(seconds: number): string {
-  if (seconds < 60) return `${seconds}s`;
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  if (mins < 60) return `${mins}:${secs.toString().padStart(2, "0")}`;
-  const hrs = Math.floor(mins / 60);
-  const remainMins = mins % 60;
-  return `${hrs}:${remainMins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-}
-
-function formatDate(timestamp: number): string {
-  const date = new Date(timestamp);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: date.getFullYear() !== now.getFullYear() ? "numeric" : undefined,
-  });
-}
 
 function PuzzleCard({
   entry,

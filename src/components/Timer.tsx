@@ -1,11 +1,6 @@
 import { usePuzzleStore } from "../store/puzzleStore";
 import { useSettingsStore } from "../store/settingsStore";
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
+import { formatTime } from "../utils/formatting";
 
 export default function Timer() {
   const elapsedSeconds = usePuzzleStore((s) => s.elapsedSeconds);

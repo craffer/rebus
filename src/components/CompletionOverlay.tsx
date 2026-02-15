@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { usePuzzleStore } from "../store/puzzleStore";
+import { formatTime } from "../utils/formatting";
 
 const CONFETTI_COLORS = [
   "#FFD700",
@@ -18,16 +19,6 @@ interface Particle {
   duration: number;
   color: string;
   size: number;
-}
-
-function formatTime(seconds: number): string {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) {
-    return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  }
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 interface CompletionOverlayProps {
