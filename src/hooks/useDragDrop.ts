@@ -50,9 +50,13 @@ export function useDragDrop(onFilesDropped: (paths: string[]) => void): {
     };
   }, []);
 
-  // Prevent browser default drag behavior (shows "not allowed" cursor otherwise)
+  // Prevent browser default drag behavior for external file drops.
+  // We only prevent default when it's NOT an internal puzzle-card drag,
+  // so that browser-based drag-to-folder and drag-to-reorder still work.
   useEffect(() => {
     const prevent = (e: DragEvent) => {
+      // Allow internal puzzle card drags (browser DnD) to proceed normally
+      if (e.dataTransfer?.types.includes("application/x-puzzle-path")) return;
       e.preventDefault();
     };
     window.addEventListener("dragover", prevent);

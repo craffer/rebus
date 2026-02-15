@@ -18,6 +18,7 @@ interface PuzzleLibraryProps {
   onOpenPuzzle: (filePath: string) => void;
   isDragOver?: boolean;
   loading: boolean;
+  isInternalDrag?: boolean;
 }
 
 const STATUS_LABELS: Record<PuzzleStatus, string> = {
@@ -39,16 +40,32 @@ function PuzzleCard({
   onRemove,
   onRename,
   onMove,
+  onReorder,
   folders,
   loading,
+  isManualSort,
+  isDragTarget,
+  dragTargetPosition,
+  onCardDragOver,
+  onCardDragLeave,
 }: {
   entry: LibraryEntry;
   onOpen: (filePath: string) => void;
   onRemove: (filePath: string) => void;
   onRename: (filePath: string, title: string) => void;
   onMove: (filePath: string, folderId: string | undefined) => void;
+  onReorder: (
+    filePath: string,
+    targetFilePath: string,
+    position: "before" | "after",
+  ) => void;
   folders: LibraryFolder[];
   loading: boolean;
+  isManualSort: boolean;
+  isDragTarget: boolean;
+  dragTargetPosition: "before" | "after";
+  onCardDragOver: (filePath: string, e: React.DragEvent) => void;
+  onCardDragLeave: () => void;
 }) {
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -121,10 +138,47 @@ function PuzzleCard({
     [entry.filePath],
   );
 
+  const handleCardDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (isManualSort) {
+        onCardDragOver(entry.filePath, e);
+      }
+    },
+    [isManualSort, entry.filePath, onCardDragOver],
+  );
+
+  const handleCardDrop = useCallback(
+    (e: React.DragEvent) => {
+      if (!isManualSort) return;
+      e.preventDefault();
+      const filePath = e.dataTransfer.getData("application/x-puzzle-path");
+      if (filePath && filePath !== entry.filePath) {
+        onReorder(filePath, entry.filePath, dragTargetPosition);
+      }
+      onCardDragLeave();
+    },
+    [
+      isManualSort,
+      entry.filePath,
+      dragTargetPosition,
+      onReorder,
+      onCardDragLeave,
+    ],
+  );
+
+  const dropIndicatorClass = isDragTarget
+    ? dragTargetPosition === "before"
+      ? "ring-2 ring-blue-400 ring-offset-1 border-l-4 border-l-blue-500"
+      : "ring-2 ring-blue-400 ring-offset-1 border-r-4 border-r-blue-500"
+    : "";
+
   return (
     <div
       draggable={!isRenaming}
       onDragStart={handleDragStart}
+      onDragOver={handleCardDragOver}
+      onDragLeave={onCardDragLeave}
+      onDrop={handleCardDrop}
       role="button"
       tabIndex={0}
       onClick={() => !isRenaming && onOpen(entry.filePath)}
@@ -132,20 +186,28 @@ function PuzzleCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" && !isRenaming) onOpen(entry.filePath);
       }}
-      className={`relative cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 ${loading ? "pointer-events-none opacity-50" : ""}`}
+      className={`relative cursor-pointer rounded-lg border border-gray-200 bg-white p-4 text-left transition-shadow hover:shadow-md dark:border-gray-700 dark:bg-gray-800 ${loading ? "pointer-events-none opacity-50" : ""} ${dropIndicatorClass}`}
     >
-      {/* Status badge + solve quality */}
+      {/* Assisted triangle badge */}
+      {entry.isSolved && entry.usedHelp && (
+        <div className="absolute right-0 top-0 h-6 w-6" title="Assisted">
+          <svg
+            className="h-6 w-6 text-gray-300 dark:text-gray-600"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+          >
+            <path d="M0 0 L24 0 L24 24 Z" />
+          </svg>
+        </div>
+      )}
+
+      {/* Status badge */}
       <div className="flex flex-wrap items-center gap-1.5">
         <span
           className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[status]}`}
         >
           {STATUS_LABELS[status]}
         </span>
-        {entry.isSolved && entry.usedHelp && (
-          <span className="text-xs italic text-gray-400 dark:text-gray-500">
-            assisted
-          </span>
-        )}
       </div>
 
       {/* Title (editable when renaming) */}
@@ -442,6 +504,7 @@ const SORT_OPTIONS: { value: LibrarySortField; label: string }[] = [
   { value: "dateOpened", label: "Date Opened" },
   { value: "title", label: "Title" },
   { value: "status", label: "Status" },
+  { value: "manual", label: "Manual" },
 ];
 
 const FILTER_OPTIONS: { value: LibraryFilterStatus; label: string }[] = [
@@ -455,6 +518,7 @@ export default function PuzzleLibrary({
   onOpenPuzzle,
   isDragOver,
   loading,
+  isInternalDrag,
 }: PuzzleLibraryProps) {
   const rawEntries = useLibraryStore((s) => s.entries);
   const folders = useLibraryStore((s) => s.folders);
@@ -479,6 +543,7 @@ export default function PuzzleLibrary({
   const removeEntry = useLibraryStore((s) => s.removeEntry);
   const renameEntry = useLibraryStore((s) => s.renameEntry);
   const moveEntry = useLibraryStore((s) => s.moveEntry);
+  const reorderEntry = useLibraryStore((s) => s.reorderEntry);
   const addFolder = useLibraryStore((s) => s.addFolder);
   const renameFolderAction = useLibraryStore((s) => s.renameFolder);
   const removeFolderAction = useLibraryStore((s) => s.removeFolder);
@@ -488,6 +553,34 @@ export default function PuzzleLibrary({
   const [showNewFolder, setShowNewFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const newFolderRef = useRef<HTMLInputElement>(null);
+
+  // Drag-to-reorder state for manual sort
+  const [dragTargetFilePath, setDragTargetFilePath] = useState<string | null>(
+    null,
+  );
+  const [dragTargetPosition, setDragTargetPosition] = useState<
+    "before" | "after"
+  >("before");
+  const isManualSort = sortField === "manual";
+
+  const handleCardDragOver = useCallback(
+    (filePath: string, e: React.DragEvent) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      const rect = e.currentTarget.getBoundingClientRect();
+      const midX = rect.left + rect.width / 2;
+      setDragTargetFilePath(filePath);
+      setDragTargetPosition(e.clientX < midX ? "before" : "after");
+    },
+    [],
+  );
+
+  const handleCardDragLeave = useCallback(() => {
+    setDragTargetFilePath(null);
+  }, []);
+
+  // Only show the file import drop overlay for external file drags, not internal puzzle drags
+  const showFileDrop = isDragOver && !isInternalDrag;
 
   // Folders visible in the current view
   const visibleFolders = useMemo(
@@ -513,10 +606,12 @@ export default function PuzzleLibrary({
   const handleSortChange = useCallback(
     (field: LibrarySortField) => {
       if (field === sortField) {
-        setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+        if (field !== "manual") {
+          setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+        }
       } else {
         setSortField(field);
-        setSortOrder(field === "title" ? "asc" : "desc");
+        setSortOrder(field === "title" || field === "manual" ? "asc" : "desc");
       }
     },
     [sortField, sortOrder, setSortField, setSortOrder],
@@ -549,7 +644,7 @@ export default function PuzzleLibrary({
   return (
     <div
       className={`mx-auto w-full max-w-3xl px-6 ${
-        isDragOver
+        showFileDrop
           ? "rounded-xl border-2 border-dashed border-blue-400 bg-blue-50/50 dark:border-blue-500 dark:bg-blue-900/20"
           : ""
       }`}
@@ -667,8 +762,8 @@ export default function PuzzleLibrary({
         </div>
       )}
 
-      {/* Drag-and-drop hint (from Tauri file drop) */}
-      {isDragOver && (
+      {/* Drag-and-drop hint (from Tauri file drop, not internal puzzle drag) */}
+      {showFileDrop && (
         <div className="mb-4 rounded-lg border-2 border-dashed border-blue-400 bg-blue-50 p-6 text-center dark:border-blue-500 dark:bg-blue-900/30">
           <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
             Drop puzzle files here to import
@@ -707,8 +802,14 @@ export default function PuzzleLibrary({
               onRemove={removeEntry}
               onRename={renameEntry}
               onMove={moveEntry}
+              onReorder={reorderEntry}
               folders={folders}
               loading={loading}
+              isManualSort={isManualSort}
+              isDragTarget={dragTargetFilePath === entry.filePath}
+              dragTargetPosition={dragTargetPosition}
+              onCardDragOver={handleCardDragOver}
+              onCardDragLeave={handleCardDragLeave}
             />
           ))}
         </div>

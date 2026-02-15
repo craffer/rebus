@@ -383,4 +383,149 @@ describe("filterAndSortEntries", () => {
     );
     expect(folderResult).toHaveLength(2);
   });
+
+  it("sorts by manual order ascending", () => {
+    const manualEntries = [
+      makeEntry({ filePath: "/a.puz", title: "Third", manualOrder: 2 }),
+      makeEntry({ filePath: "/b.puz", title: "First", manualOrder: 0 }),
+      makeEntry({ filePath: "/c.puz", title: "Second", manualOrder: 1 }),
+    ];
+    const result = filterAndSortEntries(manualEntries, "all", "manual", "asc");
+    expect(result.map((e) => e.title)).toEqual(["First", "Second", "Third"]);
+  });
+
+  it("sorts by manual order with undefined treated as 0", () => {
+    const manualEntries = [
+      makeEntry({ filePath: "/a.puz", title: "B", manualOrder: 1 }),
+      makeEntry({ filePath: "/b.puz", title: "A" }), // no manualOrder
+    ];
+    const result = filterAndSortEntries(manualEntries, "all", "manual", "asc");
+    expect(result.map((e) => e.title)).toEqual(["A", "B"]);
+  });
+});
+
+describe("reorderEntry", () => {
+  beforeEach(() => {
+    useLibraryStore.setState({
+      entries: [],
+      folders: [],
+      loaded: false,
+      sortField: "manual",
+      sortOrder: "asc",
+      filterStatus: "all",
+      currentFolderId: undefined,
+    });
+  });
+
+  it("reorders an entry before a target", () => {
+    const store = useLibraryStore.getState();
+    store.addOrUpdateEntry(
+      makeEntry({
+        filePath: "/a.puz",
+        title: "A",
+        dateOpened: 3000,
+        manualOrder: 0,
+      }),
+    );
+    store.addOrUpdateEntry(
+      makeEntry({
+        filePath: "/b.puz",
+        title: "B",
+        dateOpened: 2000,
+        manualOrder: 1,
+      }),
+    );
+    store.addOrUpdateEntry(
+      makeEntry({
+        filePath: "/c.puz",
+        title: "C",
+        dateOpened: 1000,
+        manualOrder: 2,
+      }),
+    );
+
+    // Move C before A
+    useLibraryStore.getState().reorderEntry("/c.puz", "/a.puz", "before");
+
+    const entries = useLibraryStore.getState().entries;
+    const sorted = [...entries]
+      .filter((e) => e.folderId === undefined)
+      .sort((a, b) => (a.manualOrder ?? 0) - (b.manualOrder ?? 0));
+    expect(sorted.map((e) => e.title)).toEqual(["C", "A", "B"]);
+  });
+
+  it("reorders an entry after a target", () => {
+    const store = useLibraryStore.getState();
+    store.addOrUpdateEntry(
+      makeEntry({
+        filePath: "/a.puz",
+        title: "A",
+        dateOpened: 3000,
+        manualOrder: 0,
+      }),
+    );
+    store.addOrUpdateEntry(
+      makeEntry({
+        filePath: "/b.puz",
+        title: "B",
+        dateOpened: 2000,
+        manualOrder: 1,
+      }),
+    );
+    store.addOrUpdateEntry(
+      makeEntry({
+        filePath: "/c.puz",
+        title: "C",
+        dateOpened: 1000,
+        manualOrder: 2,
+      }),
+    );
+
+    // Move A after C
+    useLibraryStore.getState().reorderEntry("/a.puz", "/c.puz", "after");
+
+    const entries = useLibraryStore.getState().entries;
+    const sorted = [...entries]
+      .filter((e) => e.folderId === undefined)
+      .sort((a, b) => (a.manualOrder ?? 0) - (b.manualOrder ?? 0));
+    expect(sorted.map((e) => e.title)).toEqual(["B", "C", "A"]);
+  });
+
+  it("is a no-op when dragging onto self", () => {
+    const store = useLibraryStore.getState();
+    store.addOrUpdateEntry(
+      makeEntry({ filePath: "/a.puz", title: "A", manualOrder: 0 }),
+    );
+    store.addOrUpdateEntry(
+      makeEntry({ filePath: "/b.puz", title: "B", manualOrder: 1 }),
+    );
+
+    useLibraryStore.getState().reorderEntry("/a.puz", "/a.puz", "before");
+
+    const entries = useLibraryStore.getState().entries;
+    const a = entries.find((e) => e.filePath === "/a.puz");
+    expect(a?.manualOrder).toBe(0);
+  });
+
+  it("initializes manualOrder from dateOpened when entries lack it", () => {
+    const store = useLibraryStore.getState();
+    store.addOrUpdateEntry(
+      makeEntry({ filePath: "/a.puz", title: "A", dateOpened: 1000 }),
+    );
+    store.addOrUpdateEntry(
+      makeEntry({ filePath: "/b.puz", title: "B", dateOpened: 3000 }),
+    );
+    store.addOrUpdateEntry(
+      makeEntry({ filePath: "/c.puz", title: "C", dateOpened: 2000 }),
+    );
+
+    // Move A after B — this should first initialize manualOrder from dateOpened desc
+    useLibraryStore.getState().reorderEntry("/a.puz", "/b.puz", "after");
+
+    const entries = useLibraryStore.getState().entries;
+    // All entries should now have manualOrder defined
+    for (const e of entries) {
+      expect(e.manualOrder).toBeDefined();
+    }
+  });
 });

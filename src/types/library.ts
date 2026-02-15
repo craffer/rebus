@@ -14,6 +14,7 @@ export interface LibraryEntry {
   height: number;
   customTitle?: string; // user-assigned display name
   folderId?: string; // folder this entry belongs to (undefined = root)
+  manualOrder?: number; // position for manual sorting (lower = first)
 }
 
 export interface LibraryFolder {
@@ -23,6 +24,6 @@ export interface LibraryFolder {
   createdAt: number;
 }
 
-export type LibrarySortField = "dateOpened" | "title" | "status";
+export type LibrarySortField = "dateOpened" | "title" | "status" | "manual";
 export type LibrarySortOrder = "asc" | "desc";
 export type LibraryFilterStatus = "all" | PuzzleStatus;

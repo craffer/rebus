@@ -1,7 +1,12 @@
-import { useCallback } from "react";
+import { useCallback, useState, useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { info, error as logError } from "@tauri-apps/plugin-log";
 import { usePuzzleLoader } from "../hooks/usePuzzleLoader";
 import { useDragDrop } from "../hooks/useDragDrop";
 import { useLibraryStore } from "../store/libraryStore";
+import { puzzleIdFromPath } from "../utils/progressPersistence";
+import type { Puzzle } from "../types/puzzle";
+import type { LibraryEntry } from "../types/library";
 import PuzzleLibrary from "./PuzzleLibrary";
 
 export default function WelcomeScreen() {
@@ -11,14 +16,49 @@ export default function WelcomeScreen() {
   const hasEntries = useLibraryStore((s) => s.entries.length > 0);
   const hasFolders = useLibraryStore((s) => s.folders.length > 0);
 
-  const handleDropFiles = useCallback(
-    async (paths: string[]) => {
-      for (const path of paths) {
-        await openPuzzleByPath(path);
+  // Track whether we're in an internal (puzzle card) drag vs external file drag
+  const [isInternalDrag, setIsInternalDrag] = useState(false);
+
+  useEffect(() => {
+    const handleDragStart = () => setIsInternalDrag(true);
+    const handleDragEnd = () => setIsInternalDrag(false);
+    window.addEventListener("dragstart", handleDragStart);
+    window.addEventListener("dragend", handleDragEnd);
+    return () => {
+      window.removeEventListener("dragstart", handleDragStart);
+      window.removeEventListener("dragend", handleDragEnd);
+    };
+  }, []);
+
+  // Drag-drop imports files to library WITHOUT opening them
+  const handleDropFiles = useCallback(async (paths: string[]) => {
+    for (const path of paths) {
+      try {
+        // Parse the puzzle to get metadata, but don't open it in the solver
+        const puzzle = await invoke<Puzzle>("open_puzzle", {
+          filePath: path,
+        });
+        const entry: LibraryEntry = {
+          filePath: path,
+          puzzleId: puzzleIdFromPath(path),
+          title: puzzle.title || "Untitled",
+          author: puzzle.author || "",
+          dateOpened: Date.now(),
+          completionPercent: 0,
+          isSolved: false,
+          usedHelp: false,
+          elapsedSeconds: 0,
+          width: puzzle.width,
+          height: puzzle.height,
+        };
+        useLibraryStore.getState().addOrUpdateEntry(entry);
+        info(`Imported to library: ${path.split("/").pop()}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        logError(`Failed to import puzzle: ${message}`);
       }
-    },
-    [openPuzzleByPath],
-  );
+    }
+  }, []);
 
   // Tauri v2 drag-drop: listens for native file drop events
   const { isDragOver } = useDragDrop(handleDropFiles);
@@ -54,15 +94,6 @@ export default function WelcomeScreen() {
             {error}
           </p>
         )}
-
-        {/* Drop zone hint */}
-        {isDragOver && (
-          <div className="mx-auto mt-6 w-full max-w-md rounded-xl border-2 border-dashed border-blue-400 bg-blue-50 p-8 dark:border-blue-500 dark:bg-blue-900/30">
-            <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-              Drop puzzle files here to import
-            </p>
-          </div>
-        )}
       </div>
 
       {/* Library grid */}
@@ -72,6 +103,7 @@ export default function WelcomeScreen() {
             onOpenPuzzle={openPuzzleByPath}
             isDragOver={isDragOver}
             loading={loading}
+            isInternalDrag={isInternalDrag}
           />
         </div>
       )}
