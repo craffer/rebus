@@ -264,6 +264,47 @@ describe("useKeyboardNavigation", () => {
     ).toBeNull();
   });
 
+  // ── incorrect notice state ──────────────────────────────────────
+
+  it("blocks all input when incorrect notice is showing", () => {
+    // Fill all cells with wrong answers to trigger the notice
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+    usePuzzleStore.getState().checkSolution();
+    expect(usePuzzleStore.getState().showIncorrectNotice).toBe(true);
+    expect(usePuzzleStore.getState().timerRunning).toBe(false);
+
+    // Try to type — should be blocked since timer is paused
+    usePuzzleStore.getState().setCursor(0, 0);
+    pressKey("a");
+    // Value should still be "Z", not "A"
+    expect(usePuzzleStore.getState().puzzle!.grid[0][0].player_value).toBe("Z");
+  });
+
+  it("allows input again after dismissing incorrect notice", () => {
+    const puzzle = usePuzzleStore.getState().puzzle!;
+    for (let r = 0; r < puzzle.height; r++) {
+      for (let c = 0; c < puzzle.width; c++) {
+        if (puzzle.grid[r][c].kind === "letter") {
+          usePuzzleStore.getState().setCellValue(r, c, "Z");
+        }
+      }
+    }
+    usePuzzleStore.getState().checkSolution();
+    usePuzzleStore.getState().dismissIncorrectNotice();
+    expect(usePuzzleStore.getState().timerRunning).toBe(true);
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    pressKey("a");
+    expect(usePuzzleStore.getState().puzzle!.grid[0][0].player_value).toBe("A");
+  });
+
   // ── tab ───────────────────────────────────────────────────────────
 
   it("Tab advances to next clue", () => {
