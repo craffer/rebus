@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import type { Clue } from "../../types/puzzle";
 import type { ClueHighlight } from "./ClueList";
 
-const SCROLL_DURATION_MS = 400;
+const SCROLL_DURATION_MS = 150;
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
@@ -82,7 +82,7 @@ export default function ClueItem({
         smoothScrollTo(parent, ref.current.offsetTop - parent.offsetTop);
       }
     } else {
-      ref.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      ref.current.scrollIntoView({ block: "nearest", behavior: "auto" });
     }
   }, [isHighlighted, scrollToTop]);
 
