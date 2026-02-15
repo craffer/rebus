@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   useLibraryStore,
   getEntryStatus,
+  getDisplayTitle,
   filterAndSortEntries,
 } from "./libraryStore";
 import type { LibraryEntry } from "../types/library";
@@ -10,6 +11,8 @@ import type { LibraryEntry } from "../types/library";
 vi.mock("../utils/libraryPersistence", () => ({
   loadLibrary: vi.fn().mockResolvedValue([]),
   saveLibrary: vi.fn().mockResolvedValue(undefined),
+  loadFolders: vi.fn().mockResolvedValue([]),
+  saveFolders: vi.fn().mockResolvedValue(undefined),
 }));
 vi.mock("@tauri-apps/plugin-log", () => ({
   info: vi.fn(),
@@ -26,6 +29,7 @@ function makeEntry(overrides: Partial<LibraryEntry> = {}): LibraryEntry {
     dateOpened: Date.now(),
     completionPercent: 0,
     isSolved: false,
+    usedHelp: false,
     elapsedSeconds: 0,
     width: 15,
     height: 15,
@@ -58,15 +62,35 @@ describe("getEntryStatus", () => {
   });
 });
 
+describe("getDisplayTitle", () => {
+  it("returns the original title when no custom title is set", () => {
+    expect(getDisplayTitle(makeEntry({ title: "Original" }))).toBe("Original");
+  });
+
+  it("returns the custom title when set", () => {
+    expect(
+      getDisplayTitle(makeEntry({ title: "Original", customTitle: "My Name" })),
+    ).toBe("My Name");
+  });
+
+  it("returns the original title when custom title is empty string", () => {
+    expect(
+      getDisplayTitle(makeEntry({ title: "Original", customTitle: "" })),
+    ).toBe("Original");
+  });
+});
+
 describe("libraryStore", () => {
   beforeEach(() => {
     // Reset store to initial state
     useLibraryStore.setState({
       entries: [],
+      folders: [],
       loaded: false,
       sortField: "dateOpened",
       sortOrder: "desc",
       filterStatus: "all",
+      currentFolderId: undefined,
     });
   });
 
@@ -128,9 +152,102 @@ describe("libraryStore", () => {
     useLibraryStore.getState().removeEntry("/nonexistent.puz");
     expect(useLibraryStore.getState().entries).toHaveLength(1);
   });
+
+  describe("renameEntry", () => {
+    it("sets a custom title on an entry", () => {
+      useLibraryStore.getState().addOrUpdateEntry(makeEntry());
+      useLibraryStore.getState().renameEntry("/puzzles/test.puz", "My Puzzle");
+      const entry = useLibraryStore.getState().entries[0];
+      expect(entry.customTitle).toBe("My Puzzle");
+    });
+
+    it("clears custom title when given empty string", () => {
+      useLibraryStore
+        .getState()
+        .addOrUpdateEntry(makeEntry({ customTitle: "Custom" }));
+      useLibraryStore.getState().renameEntry("/puzzles/test.puz", "");
+      const entry = useLibraryStore.getState().entries[0];
+      expect(entry.customTitle).toBeUndefined();
+    });
+
+    it("is a no-op for unknown filePath", () => {
+      useLibraryStore.getState().addOrUpdateEntry(makeEntry());
+      useLibraryStore.getState().renameEntry("/unknown.puz", "New Name");
+      expect(useLibraryStore.getState().entries[0].customTitle).toBeUndefined();
+    });
+  });
+
+  describe("moveEntry", () => {
+    it("moves an entry to a folder", () => {
+      useLibraryStore.getState().addOrUpdateEntry(makeEntry());
+      useLibraryStore.getState().moveEntry("/puzzles/test.puz", "folder-1");
+      expect(useLibraryStore.getState().entries[0].folderId).toBe("folder-1");
+    });
+
+    it("moves an entry back to root", () => {
+      useLibraryStore
+        .getState()
+        .addOrUpdateEntry(makeEntry({ folderId: "folder-1" }));
+      useLibraryStore.getState().moveEntry("/puzzles/test.puz", undefined);
+      expect(useLibraryStore.getState().entries[0].folderId).toBeUndefined();
+    });
+  });
+
+  describe("folder management", () => {
+    it("addFolder creates a new folder", () => {
+      const folder = useLibraryStore.getState().addFolder("My Folder");
+      expect(folder.name).toBe("My Folder");
+      expect(folder.id).toMatch(/^folder-/);
+      expect(useLibraryStore.getState().folders).toHaveLength(1);
+    });
+
+    it("addFolder creates a folder with parentId", () => {
+      const parent = useLibraryStore.getState().addFolder("Parent");
+      const child = useLibraryStore.getState().addFolder("Child", parent.id);
+      expect(child.parentId).toBe(parent.id);
+      expect(useLibraryStore.getState().folders).toHaveLength(2);
+    });
+
+    it("renameFolder updates the folder name", () => {
+      const folder = useLibraryStore.getState().addFolder("Old Name");
+      useLibraryStore.getState().renameFolder(folder.id, "New Name");
+      expect(useLibraryStore.getState().folders[0].name).toBe("New Name");
+    });
+
+    it("removeFolder deletes the folder and moves entries to root", () => {
+      const folder = useLibraryStore.getState().addFolder("To Delete");
+      useLibraryStore
+        .getState()
+        .addOrUpdateEntry(makeEntry({ folderId: folder.id }));
+
+      useLibraryStore.getState().removeFolder(folder.id);
+
+      expect(useLibraryStore.getState().folders).toHaveLength(0);
+      expect(useLibraryStore.getState().entries[0].folderId).toBeUndefined();
+    });
+
+    it("removeFolder resets currentFolderId if viewing the deleted folder", () => {
+      const folder = useLibraryStore.getState().addFolder("Will Delete");
+      useLibraryStore.getState().setCurrentFolder(folder.id);
+      expect(useLibraryStore.getState().currentFolderId).toBe(folder.id);
+
+      useLibraryStore.getState().removeFolder(folder.id);
+      expect(useLibraryStore.getState().currentFolderId).toBeUndefined();
+    });
+
+    it("setCurrentFolder updates the current folder", () => {
+      const folder = useLibraryStore.getState().addFolder("Browse");
+      useLibraryStore.getState().setCurrentFolder(folder.id);
+      expect(useLibraryStore.getState().currentFolderId).toBe(folder.id);
+
+      useLibraryStore.getState().setCurrentFolder(undefined);
+      expect(useLibraryStore.getState().currentFolderId).toBeUndefined();
+    });
+  });
 });
 
 describe("filterAndSortEntries", () => {
+  // All entries at root level (no folderId)
   const entries: LibraryEntry[] = [
     makeEntry({
       filePath: "/a.puz",
@@ -155,7 +272,7 @@ describe("filterAndSortEntries", () => {
     }),
   ];
 
-  it("returns all entries when filter is 'all'", () => {
+  it("returns all root entries when filter is 'all'", () => {
     const result = filterAndSortEntries(entries, "all", "dateOpened", "desc");
     expect(result).toHaveLength(3);
   });
@@ -213,6 +330,20 @@ describe("filterAndSortEntries", () => {
     expect(result.map((e) => e.title)).toEqual(["Charlie", "Bravo", "Alpha"]);
   });
 
+  it("sorts by title using customTitle when set", () => {
+    const entriesWithCustom = [
+      makeEntry({ filePath: "/a.puz", title: "Zebra", customTitle: "AAA" }),
+      makeEntry({ filePath: "/b.puz", title: "Alpha" }),
+    ];
+    const result = filterAndSortEntries(
+      entriesWithCustom,
+      "all",
+      "title",
+      "asc",
+    );
+    expect(result.map((e) => e.filePath)).toEqual(["/a.puz", "/b.puz"]);
+  });
+
   it("sorts by status (in_progress first, then not_started, then completed)", () => {
     const result = filterAndSortEntries(entries, "all", "status", "asc");
     expect(result.map((e) => e.title)).toEqual(["Alpha", "Bravo", "Charlie"]);
@@ -226,5 +357,30 @@ describe("filterAndSortEntries", () => {
       "desc",
     );
     expect(result).toHaveLength(0);
+  });
+
+  it("filters entries by folderId", () => {
+    const folderEntries = [
+      makeEntry({ filePath: "/a.puz", folderId: "folder-1" }),
+      makeEntry({ filePath: "/b.puz", folderId: undefined }),
+      makeEntry({ filePath: "/c.puz", folderId: "folder-1" }),
+    ];
+    const rootResult = filterAndSortEntries(
+      folderEntries,
+      "all",
+      "dateOpened",
+      "desc",
+    );
+    expect(rootResult).toHaveLength(1);
+    expect(rootResult[0].filePath).toBe("/b.puz");
+
+    const folderResult = filterAndSortEntries(
+      folderEntries,
+      "all",
+      "dateOpened",
+      "desc",
+      "folder-1",
+    );
+    expect(folderResult).toHaveLength(2);
   });
 });

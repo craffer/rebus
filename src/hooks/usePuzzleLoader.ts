@@ -37,6 +37,10 @@ async function loadAndOpenPuzzle(
     ? computeCompletionPercent(currentPuzzle)
     : 0;
   const currentState = usePuzzleStore.getState();
+  // Preserve existing custom title and folder assignment
+  const existingEntry = useLibraryStore
+    .getState()
+    .entries.find((e) => e.filePath === filePath);
   const entry: LibraryEntry = {
     filePath,
     puzzleId: puzzleIdFromPath(filePath),
@@ -45,9 +49,12 @@ async function loadAndOpenPuzzle(
     dateOpened: Date.now(),
     completionPercent,
     isSolved: progress?.isSolved ?? false,
+    usedHelp: progress?.usedHelp ?? false,
     elapsedSeconds: currentState.elapsedSeconds,
     width: puzzle.width,
     height: puzzle.height,
+    customTitle: existingEntry?.customTitle,
+    folderId: existingEntry?.folderId,
   };
   useLibraryStore.getState().addOrUpdateEntry(entry);
 

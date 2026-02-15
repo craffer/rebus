@@ -8,5 +8,6 @@ export interface PuzzleProgress {
   revealedCells: string[]; // "row,col" keys for is_revealed cells
   elapsedSeconds: number;
   isSolved: boolean;
+  usedHelp: boolean; // true if check/reveal was used
   lastSaved: number; // Date.now() timestamp
 }

@@ -8,9 +8,19 @@ export interface LibraryEntry {
   dateOpened: number; // Date.now() timestamp
   completionPercent: number; // 0-100
   isSolved: boolean;
+  usedHelp: boolean; // true if check/reveal was used during solve
   elapsedSeconds: number; // time spent solving
   width: number;
   height: number;
+  customTitle?: string; // user-assigned display name
+  folderId?: string; // folder this entry belongs to (undefined = root)
+}
+
+export interface LibraryFolder {
+  id: string;
+  name: string;
+  parentId?: string; // for nested folders (undefined = root)
+  createdAt: number;
 }
 
 export type LibrarySortField = "dateOpened" | "title" | "status";
