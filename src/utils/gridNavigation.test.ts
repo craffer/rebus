@@ -214,6 +214,49 @@ describe("findClueAtPosition", () => {
     const clue = findClueAtPosition(puzzle, 1, 1, "across");
     expect(clue).toBeNull();
   });
+
+  it("returns null when cell has no clue in that direction", () => {
+    // Build a puzzle where a letter cell has only a down clue, no across clue
+    // L L L
+    // B L B
+    // L L L
+    const L = (num?: number) =>
+      makeCell("letter", { number: num ?? null, solution: "A" });
+    const B = () => makeCell("black");
+
+    const grid = [
+      [L(1), L(), L()],
+      [B(), L(), B()],
+      [L(2), L(), L()],
+    ];
+
+    const puzzle: Puzzle = {
+      title: "Test",
+      author: "",
+      copyright: "",
+      notes: "",
+      width: 3,
+      height: 3,
+      grid,
+      clues: {
+        across: [
+          { number: 1, text: "1 across", row: 0, col: 0, length: 3 },
+          { number: 2, text: "2 across", row: 2, col: 0, length: 3 },
+        ],
+        down: [{ number: 1, text: "1 down", row: 0, col: 1, length: 3 }],
+      },
+      has_solution: true,
+      is_scrambled: false,
+    };
+
+    // Cell (1, 1) has only a down clue, no across clue
+    const acrossClue = findClueAtPosition(puzzle, 1, 1, "across");
+    expect(acrossClue).toBeNull();
+
+    const downClue = findClueAtPosition(puzzle, 1, 1, "down");
+    expect(downClue).not.toBeNull();
+    expect(downClue?.number).toBe(1);
+  });
 });
 
 describe("getFirstBlankInWord", () => {

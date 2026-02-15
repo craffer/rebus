@@ -3,6 +3,7 @@ import { error as logError } from "@tauri-apps/plugin-log";
 import {
   usePuzzleStore,
   selectCurrentWordCells,
+  selectCrossClue,
 } from "../../store/puzzleStore";
 import {
   renderGrid,
@@ -13,6 +14,7 @@ import {
 } from "./GridRenderer";
 import { LIGHT_COLORS, DARK_COLORS } from "./constants";
 import { useIsDarkMode } from "../../hooks/useTheme";
+import { findClueAtPosition } from "../../utils/gridNavigation";
 
 export default function Grid() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,10 +113,36 @@ export default function Grid() {
     const cell = hitTest(x, y, state.puzzle, cellSizeRef.current);
     if (!cell) return;
 
-    // Click same cell → toggle direction
+    // Click same cell → toggle direction only if there's a clue in the other direction
     if (cell.row === state.cursor.row && cell.col === state.cursor.col) {
-      state.toggleDirection();
+      const crossClue = selectCrossClue(state);
+      if (crossClue) {
+        state.toggleDirection();
+      }
     } else {
+      // Clicking a different cell — check if current direction has a clue
+      const clueInCurrentDir = findClueAtPosition(
+        state.puzzle,
+        cell.row,
+        cell.col,
+        state.direction,
+      );
+
+      if (!clueInCurrentDir) {
+        // No clue in current direction, check cross direction
+        const crossDirection = state.direction === "across" ? "down" : "across";
+        const clueInCrossDir = findClueAtPosition(
+          state.puzzle,
+          cell.row,
+          cell.col,
+          crossDirection,
+        );
+        if (clueInCrossDir) {
+          // Switch to the direction that has a clue
+          state.setDirection(crossDirection);
+        }
+      }
+
       state.setCursor(cell.row, cell.col);
     }
   }, []);

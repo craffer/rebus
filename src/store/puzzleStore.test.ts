@@ -861,4 +861,47 @@ describe("selectors", () => {
     usePuzzleStore.setState({ puzzle: null });
     expect(selectCrossClue(usePuzzleStore.getState())).toBeNull();
   });
+
+  it("selectCrossClue returns null when cell has no clue in cross direction", () => {
+    // Build a puzzle where a letter cell has only a down clue, no across clue
+    // L L L
+    // B L B
+    // L L L
+    const L = (num?: number) =>
+      makeCell("letter", { number: num ?? null, solution: "A" });
+    const B = () => makeCell("black");
+
+    const grid = [
+      [L(1), L(), L()],
+      [B(), L(), B()],
+      [L(2), L(), L()],
+    ];
+
+    const puzzle: Puzzle = {
+      title: "Test",
+      author: "",
+      copyright: "",
+      notes: "",
+      width: 3,
+      height: 3,
+      grid,
+      clues: {
+        across: [
+          { number: 1, text: "1 across", row: 0, col: 0, length: 3 },
+          { number: 2, text: "2 across", row: 2, col: 0, length: 3 },
+        ],
+        down: [{ number: 1, text: "1 down", row: 0, col: 1, length: 3 }],
+      },
+      has_solution: true,
+      is_scrambled: false,
+    };
+
+    usePuzzleStore.setState({ puzzle });
+    usePuzzleStore.getState().setCursor(1, 1);
+    usePuzzleStore.getState().setDirection("down");
+
+    // Cell (1, 1) has only a down clue, so cross clue (across) should be null
+    const crossClue = selectCrossClue(usePuzzleStore.getState());
+    expect(crossClue).toBeNull();
+  });
 });
