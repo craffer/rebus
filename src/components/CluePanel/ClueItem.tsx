@@ -92,10 +92,10 @@ export default function ClueItem({
       onClick={() => onClick(clue)}
       className={getClassName(highlight, isComplete)}
     >
-      <span className="mr-1.5 font-medium text-gray-500 dark:text-gray-400">
+      <span className="mr-1.5 select-none font-medium text-gray-500 dark:text-gray-400">
         {clue.number}.
       </span>
-      {clue.text}
+      <span>{clue.text}</span>
     </li>
   );
 }
