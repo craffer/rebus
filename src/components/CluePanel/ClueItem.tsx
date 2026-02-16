@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import type { Clue } from "../../types/puzzle";
 import type { ClueHighlight } from "./ClueList";
 
-const SCROLL_DURATION_MS = 150;
+const SCROLL_DURATION_MS = 200;
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
@@ -82,7 +82,7 @@ export default function ClueItem({
         smoothScrollTo(parent, ref.current.offsetTop - parent.offsetTop);
       }
     } else {
-      ref.current.scrollIntoView({ block: "nearest", behavior: "auto" });
+      ref.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }, [isHighlighted, scrollToTop]);
 
@@ -90,12 +90,10 @@ export default function ClueItem({
     <li
       ref={ref}
       onClick={() => onClick(clue)}
-      className={getClassName(highlight, isComplete)}
+      data-number={`${clue.number}.`}
+      className={`clue-item ${getClassName(highlight, isComplete)}`}
     >
-      <span className="mr-1.5 select-none font-medium text-gray-500 dark:text-gray-400">
-        {clue.number}.
-      </span>
-      <span>{clue.text}</span>
+      {clue.text}
     </li>
   );
 }
