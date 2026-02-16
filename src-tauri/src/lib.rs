@@ -7,7 +7,10 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
-        .invoke_handler(tauri::generate_handler![commands::open_puzzle])
+        .invoke_handler(tauri::generate_handler![
+            commands::open_puzzle,
+            commands::set_native_theme,
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
