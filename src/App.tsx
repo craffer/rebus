@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import { invoke } from "@tauri-apps/api/core";
 import { usePuzzleStore } from "./store/puzzleStore";
 import { useSettingsStore } from "./store/settingsStore";
 import { useLibraryStore } from "./store/libraryStore";
@@ -24,7 +23,6 @@ function App() {
   const timerRunning = usePuzzleStore((s) => s.timerRunning);
   const { openPuzzleFile } = usePuzzleLoader();
   const isDark = useIsDarkMode();
-  const themeSetting = useSettingsStore((s) => s.settings.appearance.theme);
 
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -41,12 +39,9 @@ function App() {
   }, []);
 
   // Toggle dark class on <html> for Tailwind dark: variant
-  // and sync native window theme so the title bar matches
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
-    const theme = themeSetting === "system" ? null : themeSetting;
-    invoke("set_native_theme", { theme }).catch(() => {});
-  }, [isDark, themeSetting]);
+  }, [isDark]);
 
   // Celebration on first solve only (justSolved is set by checkSolution, not restoreProgress)
   useEffect(() => {

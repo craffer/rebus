@@ -15,7 +15,6 @@
     "fs:allow-exists",
     "fs:allow-appdata-read-recursive",
     "fs:allow-appdata-write-recursive",
-    "log:default",
-    "core:window:allow-set-theme"
+    "log:default"
   ]
 }

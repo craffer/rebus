@@ -1,5 +1,4 @@
 use log::{error, info};
-use tauri::Manager;
 use xword_parser::Puzzle;
 
 #[tauri::command]
@@ -24,20 +23,4 @@ pub fn open_puzzle(file_path: String) -> Result<Puzzle, String> {
     );
 
     Ok(puzzle)
-}
-
-/// Set the native window theme. Pass "dark", "light", or null/empty to follow system.
-#[tauri::command]
-pub fn set_native_theme(app: tauri::AppHandle, theme: Option<String>) -> Result<(), String> {
-    let window = app
-        .get_webview_window("main")
-        .ok_or("main window not found")?;
-
-    let tauri_theme = match theme.as_deref() {
-        Some("dark") => Some(tauri::Theme::Dark),
-        Some("light") => Some(tauri::Theme::Light),
-        _ => None,
-    };
-
-    window.set_theme(tauri_theme).map_err(|e| e.to_string())
 }
