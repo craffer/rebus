@@ -71,12 +71,16 @@ export default function WelcomeScreen() {
         <button
           onClick={openPuzzleFile}
           disabled={loading}
-          className="mt-6 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="mt-5 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? "Opening..." : "Open Puzzle"}
         </button>
-        <p className="mt-2 text-xs text-gray-400 dark:text-gray-500">
-          Supports .puz, .ipuz, and .jpz files — or drag and drop
+        <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+          Drag and drop a puzzle file, or click the button above.
+        </p>
+        <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+          Supports <code>.puz</code>, <code>.ipuz</code>, and <code>.jpz</code>{" "}
+          files.
         </p>
         {error && (
           <p className="mx-auto mt-4 max-w-md text-sm text-red-600 dark:text-red-400">
