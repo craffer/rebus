@@ -179,7 +179,7 @@ function PuzzleCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" && !isRenaming) onOpen(entry.filePath);
       }}
-      className={`relative cursor-pointer rounded-lg border p-4 text-left transition-all hover:shadow-md dark:border-gray-700 ${
+      className={`relative cursor-pointer overflow-hidden rounded-lg border p-4 text-left transition-all hover:shadow-md dark:border-gray-700 ${
         isBeingDragged
           ? "opacity-50 scale-95 border-blue-400 dark:border-blue-500"
           : "border-gray-200 bg-white dark:bg-gray-800"
