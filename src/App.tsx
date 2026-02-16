@@ -23,6 +23,7 @@ function App() {
   const timerRunning = usePuzzleStore((s) => s.timerRunning);
   const { openPuzzleFile } = usePuzzleLoader();
   const isDark = useIsDarkMode();
+  const themeSetting = useSettingsStore((s) => s.settings.appearance.theme);
 
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -43,9 +44,16 @@ function App() {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
     import("@tauri-apps/api/window").then(({ getCurrentWindow }) => {
-      getCurrentWindow().setTheme(isDark ? "dark" : "light");
+      // null lets the OS control the theme; explicit values override it
+      const nativeTheme =
+        themeSetting === "system"
+          ? null
+          : themeSetting === "dark"
+            ? "dark"
+            : "light";
+      getCurrentWindow().setTheme(nativeTheme);
     });
-  }, [isDark]);
+  }, [isDark, themeSetting]);
 
   // Celebration on first solve only (justSolved is set by checkSolution, not restoreProgress)
   useEffect(() => {
