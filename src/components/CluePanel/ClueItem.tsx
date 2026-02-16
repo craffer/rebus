@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import type { Clue } from "../../types/puzzle";
 import type { ClueHighlight } from "./ClueList";
 
-const SCROLL_DURATION_MS = 400;
+const SCROLL_DURATION_MS = 200;
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
@@ -36,8 +36,8 @@ function getClassName(highlight: ClueHighlight, isComplete: boolean): string {
 
   if (highlight === "primary") {
     const text = isComplete
-      ? "font-semibold text-gray-400 dark:text-gray-500"
-      : "font-semibold text-blue-800 dark:text-blue-200";
+      ? "text-gray-400 dark:text-gray-500"
+      : "text-blue-800 dark:text-blue-200";
     return `${base} bg-blue-100 dark:bg-blue-800/40 ${text}`;
   }
 
@@ -90,11 +90,9 @@ export default function ClueItem({
     <li
       ref={ref}
       onClick={() => onClick(clue)}
-      className={getClassName(highlight, isComplete)}
+      data-number={`${clue.number}.`}
+      className={`clue-item ${getClassName(highlight, isComplete)}`}
     >
-      <span className="mr-1.5 font-medium text-gray-500 dark:text-gray-400">
-        {clue.number}.
-      </span>
       {clue.text}
     </li>
   );
