@@ -31,6 +31,21 @@ export function useKeyboardNavigation() {
       const { puzzle, cursor, direction } = state;
       if (!puzzle || state.isSolved) return;
 
+      const settings = useSettingsStore.getState().settings;
+      const keybindings = settings.keybindings;
+      const navSettings = settings.navigation;
+
+      // Check for pause key first (should work even when timer is paused)
+      const keyStr = eventToKeyString(e);
+      const actionLookup = buildActionLookup(keybindings);
+      const action = actionLookup.get(keyStr);
+
+      if (action === "pause") {
+        e.preventDefault();
+        state.toggleTimer();
+        return;
+      }
+
       // Block all puzzle input when timer is paused
       if (!state.timerRunning) return;
 
@@ -50,15 +65,7 @@ export function useKeyboardNavigation() {
         return;
       }
 
-      const settings = useSettingsStore.getState().settings;
-      const keybindings = settings.keybindings;
-      const navSettings = settings.navigation;
-
-      // Build reverse lookup from key strings to actions
-      const actionLookup = buildActionLookup(keybindings);
-      const keyStr = eventToKeyString(e);
-      const action = actionLookup.get(keyStr);
-
+      // Check if there's a matching keybinding action
       if (action) {
         e.preventDefault();
 
@@ -197,11 +204,6 @@ export function useKeyboardNavigation() {
 
           case "pencil_mode": {
             state.togglePencilMode();
-            break;
-          }
-
-          case "pause": {
-            state.toggleTimer();
             break;
           }
         }
