@@ -438,4 +438,126 @@ describe("useKeyboardNavigation", () => {
     // Should skip (0,1) and (0,2) and land on (0,3)
     expect(state.cursor).toEqual({ row: 0, col: 3 });
   });
+
+  // ── custom keybindings ────────────────────────────────────────────
+
+  it("respects custom keybindings for movement", () => {
+    // Rebind movement to vim-style hjkl
+    useSettingsStore.getState().updateKeybindings({
+      move_left: "h",
+      move_right: "l",
+      move_up: "k",
+      move_down: "j",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("down");
+
+    // "l" should toggle direction to across (since it's move_right)
+    pressKey("l");
+    expect(usePuzzleStore.getState().direction).toBe("across");
+
+    // "j" should change direction back to down (move_down action)
+    pressKey("j");
+    expect(usePuzzleStore.getState().direction).toBe("down");
+
+    // "j" again should actually move down now
+    pressKey("j");
+    expect(usePuzzleStore.getState().cursor.row).toBeGreaterThan(0);
+  });
+
+  it("respects custom keybindings for clue navigation", () => {
+    useSettingsStore.getState().updateKeybindings({
+      next_clue: "n",
+      previous_clue: "p",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+
+    // "n" should go to next clue
+    pressKey("n");
+    expect(usePuzzleStore.getState().cursor.row).toBe(1);
+
+    // "p" should go to previous clue
+    pressKey("p");
+    expect(usePuzzleStore.getState().cursor.row).toBe(0);
+  });
+
+  it("respects custom keybindings with modifiers", () => {
+    useSettingsStore.getState().updateKeybindings({
+      next_clue: "Ctrl+n",
+      previous_clue: "Ctrl+p",
+    });
+
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+
+    // Ctrl+n should go to next clue
+    pressKey("n", { ctrlKey: true });
+    expect(usePuzzleStore.getState().cursor.row).toBe(1);
+
+    // Ctrl+p should go to previous clue
+    pressKey("p", { ctrlKey: true });
+    expect(usePuzzleStore.getState().cursor.row).toBe(0);
+
+    // Plain "n" without Ctrl should type letter
+    usePuzzleStore.getState().setCursor(0, 0);
+    pressKey("n");
+    expect(usePuzzleStore.getState().puzzle!.grid[0][0].player_value).toBe("N");
+  });
+
+  it("respects custom keybinding for rebus mode", () => {
+    useSettingsStore.getState().updateKeybindings({
+      rebus_mode: "r",
+    });
+
+    // "r" should activate rebus mode
+    pressKey("r");
+    expect(usePuzzleStore.getState().isRebusMode).toBe(true);
+  });
+
+  it("respects custom keybinding for delete", () => {
+    useSettingsStore.getState().updateKeybindings({
+      delete: "x",
+    });
+
+    usePuzzleStore.getState().setCellValue(0, 0, "A");
+    usePuzzleStore.getState().setCursor(0, 0);
+
+    // "x" should delete
+    pressKey("x");
+    expect(
+      usePuzzleStore.getState().puzzle!.grid[0][0].player_value,
+    ).toBeNull();
+  });
+
+  it("respects custom keybinding for backspace", () => {
+    useSettingsStore.getState().updateKeybindings({
+      backspace: "b",
+    });
+
+    usePuzzleStore.getState().setCellValue(0, 0, "A");
+    usePuzzleStore.getState().setCursor(0, 0);
+
+    // "b" should act as backspace (clear cell)
+    pressKey("b");
+    expect(
+      usePuzzleStore.getState().puzzle!.grid[0][0].player_value,
+    ).toBeNull();
+  });
+
+  it("default keybindings still work when not customized", () => {
+    // Don't change any keybindings - verify defaults still work
+    usePuzzleStore.getState().setCursor(0, 0);
+    usePuzzleStore.getState().setDirection("across");
+
+    // Tab should still work
+    pressKey("Tab");
+    expect(usePuzzleStore.getState().cursor.row).toBe(1);
+
+    // ArrowRight should still work
+    pressKey("ArrowRight");
+    expect(usePuzzleStore.getState().cursor.col).toBeGreaterThan(0);
+  });
 });

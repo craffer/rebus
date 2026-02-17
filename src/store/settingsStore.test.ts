@@ -115,6 +115,48 @@ describe("settingsStore", () => {
     });
   });
 
+  describe("updateKeybindings", () => {
+    it("updates a single keybinding", () => {
+      useSettingsStore.getState().updateKeybindings({ move_left: "h" });
+      expect(useSettingsStore.getState().settings.keybindings.move_left).toBe(
+        "h",
+      );
+    });
+
+    it("preserves other keybindings", () => {
+      useSettingsStore.getState().updateKeybindings({ move_left: "h" });
+      expect(useSettingsStore.getState().settings.keybindings.move_right).toBe(
+        "ArrowRight",
+      );
+      expect(useSettingsStore.getState().settings.keybindings.next_clue).toBe(
+        "Tab",
+      );
+    });
+
+    it("can update multiple keybindings at once", () => {
+      useSettingsStore.getState().updateKeybindings({
+        move_left: "h",
+        move_right: "l",
+        move_up: "k",
+        move_down: "j",
+      });
+      const kb = useSettingsStore.getState().settings.keybindings;
+      expect(kb.move_left).toBe("h");
+      expect(kb.move_right).toBe("l");
+      expect(kb.move_up).toBe("k");
+      expect(kb.move_down).toBe("j");
+    });
+
+    it("can set keybindings with modifiers", () => {
+      useSettingsStore
+        .getState()
+        .updateKeybindings({ next_clue: "Ctrl+n", previous_clue: "Ctrl+p" });
+      const kb = useSettingsStore.getState().settings.keybindings;
+      expect(kb.next_clue).toBe("Ctrl+n");
+      expect(kb.previous_clue).toBe("Ctrl+p");
+    });
+  });
+
   describe("resetToDefaults", () => {
     it("resets all settings to defaults", () => {
       useSettingsStore
@@ -124,9 +166,23 @@ describe("settingsStore", () => {
       useSettingsStore
         .getState()
         .updateFeedback({ play_sound_on_solve: false });
+      useSettingsStore.getState().updateKeybindings({ move_left: "h" });
 
       useSettingsStore.getState().resetToDefaults();
       expect(useSettingsStore.getState().settings).toEqual(DEFAULT_SETTINGS);
+    });
+
+    it("resets keybindings to defaults", () => {
+      useSettingsStore.getState().updateKeybindings({
+        move_left: "h",
+        move_right: "l",
+        next_clue: "n",
+      });
+
+      useSettingsStore.getState().resetToDefaults();
+      expect(useSettingsStore.getState().settings.keybindings).toEqual(
+        DEFAULT_SETTINGS.keybindings,
+      );
     });
   });
 });
