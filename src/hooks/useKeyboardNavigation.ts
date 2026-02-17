@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePuzzleStore, selectCurrentClue } from "../store/puzzleStore";
 import { useSettingsStore } from "../store/settingsStore";
 import {
@@ -22,6 +22,9 @@ import type { Clue, Direction } from "../types/puzzle";
  * All behavior is driven by the settings store.
  */
 export function useKeyboardNavigation() {
+  // Track the original pencil mode state before Shift was pressed
+  const savedPencilModeRef = useRef<boolean | null>(null);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const state = usePuzzleStore.getState();
@@ -191,6 +194,34 @@ export function useKeyboardNavigation() {
             state.activateRebusMode();
             break;
           }
+
+          case "pencil_mode": {
+            state.togglePencilMode();
+            break;
+          }
+
+          case "pause": {
+            state.toggleTimer();
+            break;
+          }
+        }
+        return;
+      }
+
+      // Shift key handling for temporary pencil mode
+      if (
+        e.key === "Shift" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        navSettings.shift_activates_pencil_mode
+      ) {
+        // Save current state and activate pencil mode
+        if (savedPencilModeRef.current === null) {
+          savedPencilModeRef.current = state.isPencilMode;
+          if (!state.isPencilMode) {
+            state.togglePencilMode();
+          }
         }
         return;
       }
@@ -243,8 +274,27 @@ export function useKeyboardNavigation() {
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      // Restore original pencil mode state when Shift is released
+      if (e.key === "Shift" && savedPencilModeRef.current !== null) {
+        const state = usePuzzleStore.getState();
+        const savedState = savedPencilModeRef.current;
+
+        // Restore to the saved state
+        if (state.isPencilMode !== savedState) {
+          state.togglePencilMode();
+        }
+
+        savedPencilModeRef.current = null;
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
   }, []);
 }
 

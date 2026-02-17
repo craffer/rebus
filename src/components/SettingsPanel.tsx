@@ -189,6 +189,11 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
           checked={settings.navigation.scroll_clue_to_top}
           onChange={(v) => updateNavigation({ scroll_clue_to_top: v })}
         />
+        <Toggle
+          label="Shift activates pencil mode"
+          checked={settings.navigation.shift_activates_pencil_mode}
+          onChange={(v) => updateNavigation({ shift_activates_pencil_mode: v })}
+        />
 
         {/* Keyboard Shortcuts */}
         <SectionHeader title="Keyboard Shortcuts" />
@@ -239,6 +244,23 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
           currentAction="rebus_mode"
           allBindings={settings.keybindings}
           onChange={(v) => handleKeyBindingChange("rebus_mode", v)}
+          onSwap={handleKeyBindingSwap}
+        />
+        <KeyBindingInput
+          label="Pencil mode"
+          value={settings.keybindings.pencil_mode}
+          currentAction="pencil_mode"
+          allBindings={settings.keybindings}
+          onChange={(v) => handleKeyBindingChange("pencil_mode", v)}
+          onSwap={handleKeyBindingSwap}
+          description="Hold Shift for temporary pencil mode"
+        />
+        <KeyBindingInput
+          label="Pause"
+          value={settings.keybindings.pause}
+          currentAction="pause"
+          allBindings={settings.keybindings}
+          onChange={(v) => handleKeyBindingChange("pause", v)}
           onSwap={handleKeyBindingSwap}
         />
 

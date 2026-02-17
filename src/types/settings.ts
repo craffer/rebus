@@ -21,7 +21,9 @@ export type KeyBindingAction =
   | "spacebar"
   | "backspace"
   | "delete"
-  | "rebus_mode";
+  | "rebus_mode"
+  | "pause"
+  | "pencil_mode";
 
 export interface KeyBindings {
   move_left: string;
@@ -35,6 +37,8 @@ export interface KeyBindings {
   backspace: string;
   delete: string;
   rebus_mode: string;
+  pause: string;
+  pencil_mode: string;
 }
 
 export interface NavigationSettings {
@@ -45,6 +49,7 @@ export interface NavigationSettings {
   end_of_word_action: EndOfWordAction;
   tab_skip_completed_clues: TabSkipMode;
   scroll_clue_to_top: boolean;
+  shift_activates_pencil_mode: boolean;
 }
 
 export interface FeedbackSettings {
@@ -80,6 +85,7 @@ export const DEFAULT_SETTINGS: Settings = {
     end_of_word_action: "stop",
     tab_skip_completed_clues: "ink_only",
     scroll_clue_to_top: true,
+    shift_activates_pencil_mode: true,
   },
   feedback: {
     play_sound_on_solve: true,
@@ -106,6 +112,8 @@ export const DEFAULT_SETTINGS: Settings = {
     backspace: "Backspace",
     delete: "Delete",
     rebus_mode: "Escape",
+    pause: ";",
+    pencil_mode: ".",
   },
   auto_check: "off",
   timer_direction: "up",

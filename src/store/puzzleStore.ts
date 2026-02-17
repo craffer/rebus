@@ -46,6 +46,7 @@ export interface PuzzleState {
   tickTimer: () => void;
   pauseTimer: () => void;
   resumeTimer: () => void;
+  toggleTimer: () => void;
   resetTimer: () => void;
   checkSolution: () => void;
   dismissJustSolved: () => void;
@@ -176,6 +177,12 @@ export const usePuzzleStore = create<PuzzleState>()(
     resumeTimer: () => {
       set((state) => {
         state.timerRunning = true;
+      });
+    },
+
+    toggleTimer: () => {
+      set((state) => {
+        state.timerRunning = !state.timerRunning;
       });
     },
 

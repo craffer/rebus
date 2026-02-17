@@ -170,6 +170,8 @@ function formatActionName(action: KeyBindingAction): string {
     backspace: "Backspace",
     delete: "Delete",
     rebus_mode: "Rebus mode",
+    pause: "Pause",
+    pencil_mode: "Pencil mode",
   };
   return names[action];
 }
