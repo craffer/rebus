@@ -47,10 +47,14 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
     updateKeybindings({ [conflictingAction]: newBinding });
   };
 
-  // Close on Escape
+  // Close on Escape (unless a KeyBindingInput is listening)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // Don't close if a KeyBindingInput is currently listening for a key
+        if (document.body.dataset.keybindingListening === "true") {
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         onClose();
@@ -191,13 +195,11 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
 
         {/* Next clue - show Tab and Enter together */}
         <div className="py-2">
-          <label className="flex items-center justify-between gap-4">
-            <div className="flex-1">
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                Next clue
-              </p>
-            </div>
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              Next clue
+            </p>
+            <div className="flex items-center gap-2">
               <KeyBindingInput
                 label=""
                 value={settings.keybindings.next_clue}
@@ -205,7 +207,11 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
                 allBindings={settings.keybindings}
                 onChange={(v) => handleKeyBindingChange("next_clue", v)}
                 onSwap={handleKeyBindingSwap}
+                inline
               />
+              <span className="text-[10px] font-semibold tracking-wider text-gray-400 dark:text-gray-500">
+                OR
+              </span>
               <KeyBindingInput
                 label=""
                 value={settings.keybindings.next_clue_alt}
@@ -213,9 +219,10 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
                 allBindings={settings.keybindings}
                 onChange={(v) => handleKeyBindingChange("next_clue_alt", v)}
                 onSwap={handleKeyBindingSwap}
+                inline
               />
             </div>
-          </label>
+          </div>
         </div>
 
         <KeyBindingInput
@@ -239,9 +246,22 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
         <button
           type="button"
           onClick={() => setShowAdvancedBindings(!showAdvancedBindings)}
-          className="mt-2 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
         >
-          {showAdvancedBindings ? "Show less" : "Show more"}
+          <span>{showAdvancedBindings ? "Show less" : "Show more"}</span>
+          <svg
+            className={`h-3 w-3 transition-transform ${showAdvancedBindings ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 12 12"
+          >
+            <path
+              d="M2 4l4 4 4-4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
 
         {/* Advanced bindings */}
