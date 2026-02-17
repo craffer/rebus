@@ -6,6 +6,7 @@ import { usePuzzleLoader } from "./hooks/usePuzzleLoader";
 import { useKeyboardNavigation } from "./hooks/useKeyboardNavigation";
 import { useTimer } from "./hooks/useTimer";
 import { useIsDarkMode } from "./hooks/useTheme";
+import { useKonamiCode } from "./hooks/useKonamiCode";
 import { playCelebrationSound } from "./utils/celebrationSound";
 import { flushAutoSave, stopAutoSave } from "./utils/progressAutoSave";
 import Grid from "./components/Grid/Grid";
@@ -13,6 +14,7 @@ import CluePanel from "./components/CluePanel/CluePanel";
 import Toolbar from "./components/Toolbar";
 import WelcomeScreen from "./components/WelcomeScreen";
 import CompletionOverlay from "./components/CompletionOverlay";
+import KonamiEasterEgg from "./components/KonamiEasterEgg";
 import SettingsPanel from "./components/SettingsPanel";
 
 function App() {
@@ -26,11 +28,13 @@ function App() {
 
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showKonami, setShowKonami] = useState(false);
   const [wasTimerRunningBeforeSettings, setWasTimerRunningBeforeSettings] =
     useState(false);
 
   useKeyboardNavigation();
   useTimer();
+  useKonamiCode(useCallback(() => setShowKonami(true), []));
 
   // Load persisted settings and library from disk on app startup
   useEffect(() => {
@@ -115,6 +119,9 @@ function App() {
         <Toolbar onOpenSettings={openSettings} onGoHome={goHome} />
         <WelcomeScreen />
         {showSettings && <SettingsPanel onClose={closeSettings} />}
+        {showKonami && (
+          <KonamiEasterEgg onDismiss={() => setShowKonami(false)} />
+        )}
       </div>
     );
   }
@@ -190,6 +197,9 @@ function App() {
 
       {/* Settings modal */}
       {showSettings && <SettingsPanel onClose={closeSettings} />}
+
+      {/* Konami code easter egg */}
+      {showKonami && <KonamiEasterEgg onDismiss={() => setShowKonami(false)} />}
     </div>
   );
 }
