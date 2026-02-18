@@ -54,8 +54,8 @@ const CLUES = [
   { number: 3, direction: "Across", text: "What you came here to do" },
 ];
 
-const REVEAL_INTERVAL_MS = 120;
-const AUTO_DISMISS_MS = 5000;
+const REVEAL_INTERVAL_MS = 300;
+const AUTO_DISMISS_MS = 15_000;
 
 /** Set of (row,col) keys that are letter cells */
 const letterCellSet = new Set(LETTER_CELLS.map((c) => `${c.row},${c.col}`));
