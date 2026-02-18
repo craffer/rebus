@@ -6,32 +6,47 @@
   <br>
 </h1>
 
-A native desktop crossword puzzle solver. Opens `.puz` files and provides a smooth, speedy solving experience, with configurable navigation, dark mode, and more.
+A native desktop crossword puzzle solver for serious solvers. Supports `.puz`, `.ipuz`, and `.jpz` formats. Configurable navigation, dark mode, and more. Works fully offline.
 
-Built with Tauri v2 (Rust backend + system webview), React 19, TypeScript, and HTML5 Canvas for grid rendering.
+Built with Tauri v2 (Rust + system WebView), React 19, TypeScript, and HTML5 Canvas.
 
-This is a work-in-progress; eventually, you'll be able to download this as an app and solve away! For now, I've added instructions for devs below.
+## Download
 
-## Getting started
+Grab the latest installer from the **Releases** page on GitHub (sidebar or Releases tab).
 
-To run locally:
+| Platform | File |
+|---|---|
+| macOS (Apple Silicon) | `Rebus_x.x.x_aarch64.dmg` |
+| macOS (Intel) | `Rebus_x.x.x_x64.dmg` |
+| Windows | `Rebus_x.x.x_x64-setup.exe` or `Rebus_x.x.x_x64_en-US.msi` |
+
+### macOS — security warning
+
+Rebus is not code-signed. On first launch macOS will block it with an "unidentified developer" warning.
+
+To open it anyway:
+
+1. Right-click (or Control-click) the `.app` and choose **Open**
+2. Click **Open** in the confirmation dialog
+
+Alternatively, after the first blocked attempt go to **System Settings → Privacy & Security** and click **Open Anyway**.
+
+### Windows — security warning
+
+Rebus is not code-signed. Windows SmartScreen may show a "Windows protected your PC" warning.
+
+To open it anyway:
+
+1. Click **More info**
+2. Click **Run anyway**
+
+## Building from source
+
+Requires Rust (stable) and Node.js (LTS).
 
 ```bash
 npm install
 npm run tauri dev
 ```
 
-## Testing
-
-Run the test suite:
-
-```bash
-cargo test --workspace    # Rust tests
-npx vitest run            # Frontend tests
-```
-
-## Project structure
-
-- `crates/xword-parser/` — Standalone Rust crate for parsing `.puz` files
-- `src-tauri/` — Tauri app backend (thin wrapper over xword-parser)
-- `src/` — React frontend (Zustand state, Canvas renderer, Tailwind CSS)
+See [CLAUDE.md](CLAUDE.md) for the full development guide, project structure, and testing instructions.
