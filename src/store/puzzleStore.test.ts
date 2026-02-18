@@ -788,6 +788,7 @@ describe("restoreProgress", () => {
       revealedCells: ["0,3"],
       elapsedSeconds: 42,
       isSolved: false,
+      usedHelp: false,
       lastSaved: Date.now(),
     };
 
@@ -814,6 +815,7 @@ describe("restoreProgress", () => {
       revealedCells: [],
       elapsedSeconds: 100,
       isSolved: true,
+      usedHelp: false,
       lastSaved: Date.now(),
     };
 
@@ -834,6 +836,7 @@ describe("restoreProgress", () => {
       revealedCells: [],
       elapsedSeconds: 999,
       isSolved: true,
+      usedHelp: false,
       lastSaved: Date.now(),
     };
 
@@ -858,6 +861,7 @@ describe("restoreProgress", () => {
       revealedCells: [],
       elapsedSeconds: 100,
       isSolved: true,
+      usedHelp: false,
       lastSaved: Date.now(),
     };
 

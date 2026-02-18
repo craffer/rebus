@@ -30,7 +30,7 @@ export function useDragDrop(onFilesDropped: (paths: string[]) => void): {
 
         if (type === "enter" || type === "over") {
           setIsDragOver(true);
-        } else if (type === "leave" || type === "cancel") {
+        } else if (type === "leave") {
           setIsDragOver(false);
         } else if (type === "drop") {
           setIsDragOver(false);
@@ -86,7 +86,7 @@ export function useDragDropCallback(): {
 
         if (type === "enter" || type === "over") {
           setIsDragOver(true);
-        } else if (type === "leave" || type === "cancel") {
+        } else if (type === "leave") {
           setIsDragOver(false);
         } else if (type === "drop") {
           setIsDragOver(false);
