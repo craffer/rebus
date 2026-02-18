@@ -13,7 +13,8 @@
     "format:check": "prettier --check 'src/**/*.{ts,tsx}'",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "prepare": "husky"
+    "prepare": "husky",
+    "update-icons": "rsvg-convert imgs/icons/grid.svg -w 1024 -h 1024 -o imgs/icons/icon-1024.png && npm run tauri icon imgs/icons/icon-1024.png && rm -f src-tauri/icons/icon-1024.png && cargo clean -p rebus"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
