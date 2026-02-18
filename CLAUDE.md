@@ -69,6 +69,22 @@ cargo fmt                 # Rust format
 cargo clippy --workspace  # Rust lint
 ```
 
+## Icon Generation
+
+The app icon source is `imgs/icons/grid.svg`. To regenerate all platform-specific icons (macOS .icns, Windows .ico, PNGs):
+
+```bash
+npm run update-icons      # Converts SVG → PNG → generates all Tauri icon formats → cleans rebus package
+```
+
+This command:
+1. Converts `imgs/icons/grid.svg` to `imgs/icons/icon-1024.png` using rsvg-convert
+2. Generates all required icon sizes/formats in `src-tauri/icons/` via Tauri CLI
+3. Cleans up redundant `src-tauri/icons/icon-1024.png`
+4. Runs `cargo clean -p rebus` to force rebuild with new icons
+
+Requirements: `rsvg-convert` must be installed (available via Homebrew: `brew install librsvg`)
+
 ## Tech Stack
 
 - **Tauri v2** — Rust backend + system WebView frontend
