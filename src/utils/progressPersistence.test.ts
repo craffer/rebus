@@ -71,6 +71,7 @@ describe("progressPersistence", () => {
         revealedCells: [],
         elapsedSeconds: 10,
         isSolved: false,
+        usedHelp: false,
         lastSaved: 1234567890,
       };
 
@@ -101,6 +102,7 @@ describe("progressPersistence", () => {
         revealedCells: [],
         elapsedSeconds: 0,
         isSolved: false,
+        usedHelp: false,
         lastSaved: 0,
       };
 
@@ -126,6 +128,7 @@ describe("progressPersistence", () => {
         revealedCells: [],
         elapsedSeconds: 5,
         isSolved: false,
+        usedHelp: false,
         lastSaved: 123,
       };
 

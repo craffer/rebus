@@ -29,8 +29,10 @@ coverage/
 # Rust build artifacts
 target/
 
-# Claude Code
-.claude/
+# Claude Code — commit commands/, ignore local settings and memory
+.claude/settings.json
+.claude/settings.local.json
+.claude/memory/
 screenshots/
 
 # Planning
