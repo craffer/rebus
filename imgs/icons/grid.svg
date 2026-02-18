@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <!-- Light blue background -->
+  <rect width="1024" height="1024" rx="200" ry="200" fill="#4A90D9"/>
+
+  <!-- Grid: 2x2, centered, bold dark lines, rounder corners -->
+  <!-- Grid block: 794x794 centered (115,115 to 909,909) -->
+  <rect x="115" y="115" width="794" height="794" rx="73" ry="73" fill="#1a1a1a"/>
+
+  <!-- Cell size: 349x349, gap: 32px (thicker grid lines), inset: 32px from grid edge -->
+  <!-- Top-left cell: R -->
+  <rect x="147" y="147" width="349" height="349" rx="37" ry="37" fill="#ffffff"/>
+  <text x="178" y="215" font-family="'SF Pro Display', 'Inter', 'Helvetica Neue', sans-serif" font-size="52" font-weight="500" fill="#888888">1</text>
+  <text x="321" y="332"
+        font-family="'SF Pro Display', 'Inter', 'Helvetica Neue', sans-serif"
+        font-size="291" font-weight="700"
+        fill="#1a1a1a"
+        text-anchor="middle"
+        dominant-baseline="central">R</text>
+
+  <!-- Top-right cell: E -->
+  <rect x="528" y="147" width="349" height="349" rx="37" ry="37" fill="#ffffff"/>
+  <text x="702" y="332"
+        font-family="'SF Pro Display', 'Inter', 'Helvetica Neue', sans-serif"
+        font-size="291" font-weight="700"
+        fill="#1a1a1a"
+        text-anchor="middle"
+        dominant-baseline="central">E</text>
+
+  <!-- Bottom-left cell: filled black (blends with grid lines) -->
+
+  <!-- Bottom-right cell: BUS (rebus) -->
+  <rect x="528" y="528" width="349" height="349" rx="37" ry="37" fill="#ffffff"/>
+  <text x="702" y="717"
+        font-family="'SF Pro Display', 'Inter', 'Helvetica Neue', sans-serif"
+        font-size="166" font-weight="700"
+        fill="#1a1a1a"
+        text-anchor="middle"
+        dominant-baseline="central">BUS</text>
+</svg>
