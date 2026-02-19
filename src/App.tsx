@@ -26,6 +26,7 @@ function App() {
 
   const [showCelebration, setShowCelebration] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const [wasTimerRunningBeforeSettings, setWasTimerRunningBeforeSettings] =
     useState(false);
 
@@ -135,17 +136,40 @@ function App() {
                 Paused
               </p>
               <button
-                onClick={() => usePuzzleStore.getState().resumeTimer()}
+                onClick={() => {
+                  setConfirmReset(false);
+                  usePuzzleStore.getState().resumeTimer();
+                }}
                 className="rounded-lg bg-blue-600 px-6 py-2 text-sm font-medium text-white hover:bg-blue-700"
               >
                 Resume
               </button>
-              <button
-                onClick={() => usePuzzleStore.getState().resetPuzzle()}
-                className="mt-3 text-sm text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
-              >
-                Reset puzzle
-              </button>
+              {confirmReset ? (
+                <div className="mt-3 flex items-center gap-3">
+                  <span className="text-sm text-gray-500 dark:text-gray-400">
+                    Are you sure?
+                  </span>
+                  <button
+                    onClick={() => usePuzzleStore.getState().resetPuzzle()}
+                    className="text-sm font-medium text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                  >
+                    Yes, reset
+                  </button>
+                  <button
+                    onClick={() => setConfirmReset(false)}
+                    className="text-sm text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setConfirmReset(true)}
+                  className="mt-3 text-sm text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300"
+                >
+                  Reset puzzle
+                </button>
+              )}
             </div>
           )}
         </div>
