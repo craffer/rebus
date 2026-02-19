@@ -264,4 +264,55 @@ describe("KeyBindingInput", () => {
       expect(defaultProps.onSwap).not.toHaveBeenCalled();
     });
   });
+
+  describe("exclusive listening — only one input active at a time", () => {
+    it("clicking a second input deactivates the first", () => {
+      render(
+        <>
+          <KeyBindingInput {...defaultProps} label="First" />
+          <KeyBindingInput
+            {...defaultProps}
+            label="Second"
+            currentAction="move_right"
+          />
+        </>,
+      );
+
+      const [firstButton, secondButton] = screen.getAllByRole("button");
+
+      fireEvent.click(firstButton);
+      expect(firstButton.textContent).toBe("Press a key...");
+
+      fireEvent.click(secondButton);
+      expect(firstButton.textContent).not.toBe("Press a key...");
+      expect(secondButton.textContent).toBe("Press a key...");
+    });
+
+    it("only the most-recently clicked input listens for keys", () => {
+      render(
+        <>
+          <KeyBindingInput {...defaultProps} label="First" />
+          <KeyBindingInput
+            {...defaultProps}
+            label="Second"
+            currentAction="move_right"
+          />
+        </>,
+      );
+
+      const [firstButton, secondButton] = screen.getAllByRole("button");
+
+      // Start listening on first, then switch to second
+      fireEvent.click(firstButton);
+      fireEvent.click(secondButton);
+
+      // A keypress should be captured by the second input only
+      fireEvent.keyDown(window, { key: "Tab" });
+
+      // Second input should have accepted Tab and stopped listening
+      expect(secondButton.textContent).not.toBe("Press a key...");
+      // First input should not have captured Tab — onChange called exactly once
+      expect(defaultProps.onChange).toHaveBeenCalledTimes(1);
+    });
+  });
 });

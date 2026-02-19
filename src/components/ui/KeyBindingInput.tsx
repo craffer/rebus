@@ -7,6 +7,17 @@ import {
 } from "../../utils/keyboardUtils";
 import type { KeyBindings, KeyBindingAction } from "../../types/settings";
 
+// Module-level ref: setter for the currently-listening input, so clicking a
+// new input automatically deactivates the previous one.
+let currentListeningSetState: ((val: boolean) => void) | null = null;
+
+const isMac =
+  typeof navigator !== "undefined" &&
+  navigator.platform.toLowerCase().includes("mac");
+const INVALID_KEY_ERROR = isMac
+  ? "Single letters are reserved for puzzle input. Add a modifier (like ⌘ or ⇧), or choose a non-letter key."
+  : "Single letters are reserved for puzzle input. Add a modifier (like Ctrl or Shift), or choose a non-letter key.";
+
 interface KeyBindingInputProps {
   label: string;
   value: string;
@@ -39,6 +50,8 @@ export default function KeyBindingInput({
       return;
     }
 
+    // Register this input as the active listener
+    currentListeningSetState = setIsListening;
     // Set indicator that we're listening for a key
     document.body.dataset.keybindingListening = "true";
 
@@ -58,9 +71,7 @@ export default function KeyBindingInput({
         !e.altKey
       ) {
         flushSync(() => {
-          setInvalidKeyError(
-            "Single letters are reserved for puzzle input. Add a modifier (Ctrl, Alt, or Cmd).",
-          );
+          setInvalidKeyError(INVALID_KEY_ERROR);
         });
         setTimeout(() => setInvalidKeyError(null), 3000);
         return;
@@ -89,6 +100,9 @@ export default function KeyBindingInput({
     window.addEventListener("keydown", handleKeyDown, true);
 
     return () => {
+      if (currentListeningSetState === setIsListening) {
+        currentListeningSetState = null;
+      }
       window.removeEventListener("keydown", handleKeyDown, true);
       delete document.body.dataset.keybindingListening;
     };
@@ -100,7 +114,10 @@ export default function KeyBindingInput({
       <div>
         <button
           type="button"
-          onClick={() => setIsListening(true)}
+          onClick={() => {
+            currentListeningSetState?.(false);
+            setIsListening(true);
+          }}
           className={`min-w-20 rounded border px-2.5 py-1 font-mono text-xs ${
             isListening
               ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
@@ -145,7 +162,10 @@ export default function KeyBindingInput({
         </div>
         <button
           type="button"
-          onClick={() => setIsListening(true)}
+          onClick={() => {
+            currentListeningSetState?.(false);
+            setIsListening(true);
+          }}
           className={`min-w-20 rounded border px-2.5 py-1 font-mono text-xs ${
             isListening
               ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
