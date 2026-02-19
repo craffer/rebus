@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { flushSync } from "react-dom";
 import {
   eventToKeyString,
   formatKeyForDisplay,
@@ -29,6 +30,7 @@ export default function KeyBindingInput({
 }: KeyBindingInputProps) {
   const [isListening, setIsListening] = useState(false);
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
+  const [invalidKeyError, setInvalidKeyError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isListening) {
@@ -55,6 +57,12 @@ export default function KeyBindingInput({
         !e.ctrlKey &&
         !e.altKey
       ) {
+        flushSync(() => {
+          setInvalidKeyError(
+            "Single letters are reserved for puzzle input. Add a modifier (Ctrl, Alt, or Cmd).",
+          );
+        });
+        setTimeout(() => setInvalidKeyError(null), 3000);
         return;
       }
 
@@ -112,6 +120,11 @@ export default function KeyBindingInput({
             ⚠ {conflictWarning}
           </p>
         )}
+        {invalidKeyError && (
+          <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+            ✕ {invalidKeyError}
+          </p>
+        )}
       </div>
     );
   }
@@ -151,6 +164,11 @@ export default function KeyBindingInput({
       {conflictWarning && (
         <p className="mt-1 text-xs text-orange-600 dark:text-orange-400">
           ⚠ {conflictWarning}
+        </p>
+      )}
+      {invalidKeyError && (
+        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
+          ✕ {invalidKeyError}
         </p>
       )}
     </div>
