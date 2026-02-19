@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { ReactNode } from "react";
 import { flushSync } from "react-dom";
 import {
   eventToKeyString,
@@ -14,9 +15,17 @@ let currentListeningSetState: ((val: boolean) => void) | null = null;
 const isMac =
   typeof navigator !== "undefined" &&
   navigator.platform.toLowerCase().includes("mac");
-const INVALID_KEY_ERROR = isMac
-  ? "Single letters are reserved for puzzle input. Add a modifier (like ⌘ or ⇧), or choose a non-letter key."
-  : "Single letters are reserved for puzzle input. Add a modifier (like Ctrl or Shift), or choose a non-letter key.";
+const INVALID_KEY_ERROR: ReactNode = isMac ? (
+  <>
+    Single letters are reserved for puzzle input. Add a modifier (like ⌘ or ⌥),
+    or choose a non-letter key.
+  </>
+) : (
+  <>
+    Single letters are reserved for puzzle input. Add a modifier (like{" "}
+    <code>Ctrl</code> or <code>Alt</code>), or choose a non-letter key.
+  </>
+);
 
 interface KeyBindingInputProps {
   label: string;
@@ -41,7 +50,9 @@ export default function KeyBindingInput({
 }: KeyBindingInputProps) {
   const [isListening, setIsListening] = useState(false);
   const [conflictWarning, setConflictWarning] = useState<string | null>(null);
-  const [invalidKeyError, setInvalidKeyError] = useState<string | null>(null);
+  const [invalidKeyError, setInvalidKeyError] = useState<ReactNode | null>(
+    null,
+  );
 
   useEffect(() => {
     if (!isListening) {
