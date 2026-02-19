@@ -1,7 +1,8 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSettingsStore } from "../store/settingsStore";
 import Toggle from "./ui/Toggle";
 import Select from "./ui/Select";
+import KeyBindingInput from "./ui/KeyBindingInput";
 import type {
   ArrowKeyBehavior,
   SpacebarBehavior,
@@ -11,6 +12,7 @@ import type {
   TimerDirection,
   ClueFontSize,
   Theme,
+  KeyBindingAction,
 } from "../types/settings";
 
 interface SettingsPanelProps {
@@ -30,12 +32,29 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
   const updateNavigation = useSettingsStore((s) => s.updateNavigation);
   const updateFeedback = useSettingsStore((s) => s.updateFeedback);
   const updateAppearance = useSettingsStore((s) => s.updateAppearance);
+  const updateKeybindings = useSettingsStore((s) => s.updateKeybindings);
   const resetToDefaults = useSettingsStore((s) => s.resetToDefaults);
+  const [showAdvancedBindings, setShowAdvancedBindings] = useState(false);
 
-  // Close on Escape
+  const handleKeyBindingChange = (action: KeyBindingAction, keyStr: string) => {
+    updateKeybindings({ [action]: keyStr });
+  };
+
+  const handleKeyBindingSwap = (
+    conflictingAction: KeyBindingAction,
+    newBinding: string,
+  ) => {
+    updateKeybindings({ [conflictingAction]: newBinding });
+  };
+
+  // Close on Escape (unless a KeyBindingInput is listening)
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // Don't close if a KeyBindingInput is currently listening for a key
+        if (document.body.dataset.keybindingListening === "true") {
+          return;
+        }
         e.preventDefault();
         e.stopPropagation();
         onClose();
@@ -170,6 +189,165 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
           checked={settings.navigation.scroll_clue_to_top}
           onChange={(v) => updateNavigation({ scroll_clue_to_top: v })}
         />
+        <Toggle
+          label="Shift activates pencil mode"
+          checked={settings.navigation.shift_activates_pencil_mode}
+          onChange={(v) => updateNavigation({ shift_activates_pencil_mode: v })}
+        />
+
+        {/* Keyboard Shortcuts */}
+        <SectionHeader title="Keyboard Shortcuts" />
+
+        {/* Next clue - show Tab and Enter together */}
+        <div className="py-2">
+          <div className="flex items-center justify-between gap-4">
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+              Next clue
+            </p>
+            <div className="flex items-center gap-2">
+              <KeyBindingInput
+                label=""
+                value={settings.keybindings.next_clue}
+                currentAction="next_clue"
+                allBindings={settings.keybindings}
+                onChange={(v) => handleKeyBindingChange("next_clue", v)}
+                onSwap={handleKeyBindingSwap}
+                inline
+              />
+              <span className="text-[10px] font-semibold tracking-wider text-gray-400 dark:text-gray-500">
+                OR
+              </span>
+              <KeyBindingInput
+                label=""
+                value={settings.keybindings.next_clue_alt}
+                currentAction="next_clue_alt"
+                allBindings={settings.keybindings}
+                onChange={(v) => handleKeyBindingChange("next_clue_alt", v)}
+                onSwap={handleKeyBindingSwap}
+                inline
+              />
+            </div>
+          </div>
+        </div>
+
+        <KeyBindingInput
+          label="Previous clue"
+          value={settings.keybindings.previous_clue}
+          currentAction="previous_clue"
+          allBindings={settings.keybindings}
+          onChange={(v) => handleKeyBindingChange("previous_clue", v)}
+          onSwap={handleKeyBindingSwap}
+        />
+        <KeyBindingInput
+          label="Rebus mode"
+          value={settings.keybindings.rebus_mode}
+          currentAction="rebus_mode"
+          allBindings={settings.keybindings}
+          onChange={(v) => handleKeyBindingChange("rebus_mode", v)}
+          onSwap={handleKeyBindingSwap}
+        />
+        <KeyBindingInput
+          label="Pencil mode"
+          value={settings.keybindings.pencil_mode}
+          currentAction="pencil_mode"
+          allBindings={settings.keybindings}
+          onChange={(v) => handleKeyBindingChange("pencil_mode", v)}
+          onSwap={handleKeyBindingSwap}
+          description="Hold Shift for temporary pencil mode"
+        />
+        <KeyBindingInput
+          label="Pause"
+          value={settings.keybindings.pause}
+          currentAction="pause"
+          allBindings={settings.keybindings}
+          onChange={(v) => handleKeyBindingChange("pause", v)}
+          onSwap={handleKeyBindingSwap}
+        />
+
+        {/* Show more/less toggle */}
+        <button
+          type="button"
+          onClick={() => setShowAdvancedBindings(!showAdvancedBindings)}
+          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:border-gray-300 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:border-gray-600 dark:hover:bg-gray-750"
+        >
+          <span>{showAdvancedBindings ? "Show less" : "Show more"}</span>
+          <svg
+            className={`h-3 w-3 transition-transform ${showAdvancedBindings ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            viewBox="0 0 12 12"
+          >
+            <path
+              d="M2 4l4 4 4-4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+
+        {/* Advanced bindings */}
+        {showAdvancedBindings && (
+          <>
+            <KeyBindingInput
+              label="Move left"
+              value={settings.keybindings.move_left}
+              currentAction="move_left"
+              allBindings={settings.keybindings}
+              onChange={(v) => handleKeyBindingChange("move_left", v)}
+              onSwap={handleKeyBindingSwap}
+            />
+            <KeyBindingInput
+              label="Move right"
+              value={settings.keybindings.move_right}
+              currentAction="move_right"
+              allBindings={settings.keybindings}
+              onChange={(v) => handleKeyBindingChange("move_right", v)}
+              onSwap={handleKeyBindingSwap}
+            />
+            <KeyBindingInput
+              label="Move up"
+              value={settings.keybindings.move_up}
+              currentAction="move_up"
+              allBindings={settings.keybindings}
+              onChange={(v) => handleKeyBindingChange("move_up", v)}
+              onSwap={handleKeyBindingSwap}
+            />
+            <KeyBindingInput
+              label="Move down"
+              value={settings.keybindings.move_down}
+              currentAction="move_down"
+              allBindings={settings.keybindings}
+              onChange={(v) => handleKeyBindingChange("move_down", v)}
+              onSwap={handleKeyBindingSwap}
+            />
+            <KeyBindingInput
+              label="Spacebar action"
+              value={settings.keybindings.spacebar}
+              currentAction="spacebar"
+              allBindings={settings.keybindings}
+              onChange={(v) => handleKeyBindingChange("spacebar", v)}
+              onSwap={handleKeyBindingSwap}
+              description="Behavior configured above"
+            />
+            <KeyBindingInput
+              label="Backspace"
+              value={settings.keybindings.backspace}
+              currentAction="backspace"
+              allBindings={settings.keybindings}
+              onChange={(v) => handleKeyBindingChange("backspace", v)}
+              onSwap={handleKeyBindingSwap}
+            />
+            <KeyBindingInput
+              label="Delete"
+              value={settings.keybindings.delete}
+              currentAction="delete"
+              allBindings={settings.keybindings}
+              onChange={(v) => handleKeyBindingChange("delete", v)}
+              onSwap={handleKeyBindingSwap}
+            />
+          </>
+        )}
 
         {/* Feedback */}
         <SectionHeader title="Feedback" />

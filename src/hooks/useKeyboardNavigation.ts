@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePuzzleStore, selectCurrentClue } from "../store/puzzleStore";
 import { useSettingsStore } from "../store/settingsStore";
 import {
@@ -13,6 +13,7 @@ import {
   isClueComplete,
   isPuzzleFullyFilled,
 } from "../utils/gridNavigation";
+import { eventToKeyString, buildActionLookup } from "../utils/keyboardUtils";
 import type { Clue, Direction } from "../types/puzzle";
 
 /**
@@ -21,11 +22,29 @@ import type { Clue, Direction } from "../types/puzzle";
  * All behavior is driven by the settings store.
  */
 export function useKeyboardNavigation() {
+  // Track the original pencil mode state before Shift was pressed
+  const savedPencilModeRef = useRef<boolean | null>(null);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const state = usePuzzleStore.getState();
       const { puzzle, cursor, direction } = state;
       if (!puzzle || state.isSolved) return;
+
+      const settings = useSettingsStore.getState().settings;
+      const keybindings = settings.keybindings;
+      const navSettings = settings.navigation;
+
+      // Check for pause key first (should work even when timer is paused)
+      const keyStr = eventToKeyString(e);
+      const actionLookup = buildActionLookup(keybindings);
+      const action = actionLookup.get(keyStr);
+
+      if (action === "pause") {
+        e.preventDefault();
+        state.toggleTimer();
+        return;
+      }
 
       // Block all puzzle input when timer is paused
       if (!state.timerRunning) return;
@@ -46,190 +65,238 @@ export function useKeyboardNavigation() {
         return;
       }
 
-      const settings = useSettingsStore.getState().settings.navigation;
+      // Check if there's a matching keybinding action
+      if (action) {
+        e.preventDefault();
 
-      switch (e.key) {
-        case "ArrowLeft":
-        case "ArrowRight":
-        case "ArrowUp":
-        case "ArrowDown": {
-          e.preventDefault();
-          handleArrowKey(e.key, state, settings.arrow_key_behavior);
-          break;
-        }
+        switch (action) {
+          case "move_left":
+          case "move_right":
+          case "move_up":
+          case "move_down": {
+            // Map action back to arrow key name for handleArrowKey
+            const actionToKey: Record<string, string> = {
+              move_left: "ArrowLeft",
+              move_right: "ArrowRight",
+              move_up: "ArrowUp",
+              move_down: "ArrowDown",
+            };
+            handleArrowKey(
+              actionToKey[action],
+              state,
+              navSettings.arrow_key_behavior,
+            );
+            break;
+          }
 
-        case "Tab":
-        case "Enter": {
-          e.preventDefault();
-          const currentClue = selectCurrentClue(state);
-          if (!currentClue) break;
-
-          const skipMode = settings.tab_skip_completed_clues;
-          // Don't skip filled clues when the entire puzzle is filled —
-          // the user needs to navigate freely to fix errors.
-          const allFilled = isPuzzleFullyFilled(puzzle);
-          const shouldSkip =
-            skipMode !== "none" && !allFilled
-              ? (clue: Clue, dir: Direction) =>
-                  isClueComplete(
-                    puzzle,
-                    clue,
-                    dir,
-                    state.pencilCells,
-                    skipMode === "ink_only",
-                  )
-              : undefined;
-
-          // Tab+Shift goes backward; Enter always goes forward
-          const { clue: targetClue, direction: targetDir } =
-            e.key === "Tab" && e.shiftKey
-              ? getPreviousClue(puzzle, direction, currentClue, shouldSkip)
-              : getNextClue(puzzle, direction, currentClue, shouldSkip);
-
-          const blank = getFirstBlankInWord(puzzle, targetClue, targetDir);
-          state.setCursor(
-            blank?.row ?? targetClue.row,
-            blank?.col ?? targetClue.col,
-          );
-          state.setDirection(targetDir);
-          break;
-        }
-
-        case " ": {
-          e.preventDefault();
-          if (settings.spacebar_behavior === "toggle_direction") {
-            state.toggleDirection();
-          } else {
-            // Clear current cell and advance
-            state.setCellValue(cursor.row, cursor.col, null);
+          case "next_clue":
+          case "previous_clue":
+          case "next_clue_alt": {
             const currentClue = selectCurrentClue(state);
-            if (currentClue) {
-              const next = getNextCellAfterInput(
+            if (!currentClue) break;
+
+            const skipMode = navSettings.tab_skip_completed_clues;
+            // Don't skip filled clues when the entire puzzle is filled —
+            // the user needs to navigate freely to fix errors.
+            const allFilled = isPuzzleFullyFilled(puzzle);
+            const shouldSkip =
+              skipMode !== "none" && !allFilled
+                ? (clue: Clue, dir: Direction) =>
+                    isClueComplete(
+                      puzzle,
+                      clue,
+                      dir,
+                      state.pencilCells,
+                      skipMode === "ink_only",
+                    )
+                : undefined;
+
+            const { clue: targetClue, direction: targetDir } =
+              action === "previous_clue"
+                ? getPreviousClue(puzzle, direction, currentClue, shouldSkip)
+                : getNextClue(puzzle, direction, currentClue, shouldSkip);
+
+            const blank = getFirstBlankInWord(puzzle, targetClue, targetDir);
+            state.setCursor(
+              blank?.row ?? targetClue.row,
+              blank?.col ?? targetClue.col,
+            );
+            state.setDirection(targetDir);
+            break;
+          }
+
+          case "spacebar": {
+            if (navSettings.spacebar_behavior === "toggle_direction") {
+              state.toggleDirection();
+            } else {
+              // Clear current cell and advance
+              state.setCellValue(cursor.row, cursor.col, null);
+              const currentClue = selectCurrentClue(state);
+              if (currentClue) {
+                const next = getNextCellAfterInput(
+                  puzzle,
+                  currentClue,
+                  direction,
+                  cursor.row,
+                  cursor.col,
+                  { ...navSettings, skip_filled_cells: "none" },
+                );
+                if (next) {
+                  state.setCursor(next.cursor.row, next.cursor.col);
+                  state.setDirection(next.direction);
+                }
+              }
+            }
+            break;
+          }
+
+          case "backspace": {
+            const cell = puzzle.grid[cursor.row][cursor.col];
+            if (cell.player_value) {
+              // Clear current cell
+              state.setCellValue(cursor.row, cursor.col, null);
+            } else {
+              // Move back to previous cell
+              const currentClue = selectCurrentClue(state);
+              if (!currentClue) break;
+
+              const prev = getPreviousCellInWord(
                 puzzle,
                 currentClue,
                 direction,
                 cursor.row,
                 cursor.col,
-                { ...settings, skip_filled_cells: "none" },
               );
-              if (next) {
-                state.setCursor(next.cursor.row, next.cursor.col);
-                state.setDirection(next.direction);
-              }
-            }
-          }
-          break;
-        }
-
-        case "Backspace": {
-          e.preventDefault();
-          const cell = puzzle.grid[cursor.row][cursor.col];
-          if (cell.player_value) {
-            // Clear current cell
-            state.setCellValue(cursor.row, cursor.col, null);
-          } else {
-            // Move back to previous cell
-            const currentClue = selectCurrentClue(state);
-            if (!currentClue) break;
-
-            const prev = getPreviousCellInWord(
-              puzzle,
-              currentClue,
-              direction,
-              cursor.row,
-              cursor.col,
-            );
-            if (prev) {
-              state.setCursor(prev.row, prev.col);
-              state.setCellValue(prev.row, prev.col, null);
-            } else if (settings.backspace_into_previous_word) {
-              const prevWordCell = getPreviousWordLastCell(
-                puzzle,
-                direction,
-                currentClue,
-              );
-              if (prevWordCell) {
-                // Find the direction for the previous word
-                const { direction: prevDir } = getPreviousClue(
+              if (prev) {
+                state.setCursor(prev.row, prev.col);
+                state.setCellValue(prev.row, prev.col, null);
+              } else if (navSettings.backspace_into_previous_word) {
+                const prevWordCell = getPreviousWordLastCell(
                   puzzle,
                   direction,
                   currentClue,
                 );
-                state.setCursor(prevWordCell.row, prevWordCell.col);
-                state.setDirection(prevDir);
-                state.setCellValue(prevWordCell.row, prevWordCell.col, null);
+                if (prevWordCell) {
+                  // Find the direction for the previous word
+                  const { direction: prevDir } = getPreviousClue(
+                    puzzle,
+                    direction,
+                    currentClue,
+                  );
+                  state.setCursor(prevWordCell.row, prevWordCell.col);
+                  state.setDirection(prevDir);
+                  state.setCellValue(prevWordCell.row, prevWordCell.col, null);
+                }
               }
             }
+            break;
           }
-          break;
-        }
 
-        case "Delete": {
-          e.preventDefault();
-          state.setCellValue(cursor.row, cursor.col, null);
-          break;
-        }
-
-        case "Escape": {
-          e.preventDefault();
-          state.activateRebusMode();
-          break;
-        }
-
-        default: {
-          // Letter input
-          if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
-            e.preventDefault();
-            if (e.metaKey || e.ctrlKey || e.altKey) break;
-
-            state.setCellValue(cursor.row, cursor.col, e.key.toUpperCase());
-
-            // Auto-check behavior
-            const autoCheck = useSettingsStore.getState().settings.auto_check;
-            if (autoCheck === "check") {
-              usePuzzleStore.getState().checkCell(cursor.row, cursor.col);
-            } else if (autoCheck === "reveal") {
-              // Check if the value is incorrect, then reveal
-              const freshCell =
-                usePuzzleStore.getState().puzzle?.grid[cursor.row][cursor.col];
-              if (
-                freshCell &&
-                freshCell.solution &&
-                freshCell.player_value?.toUpperCase() !==
-                  freshCell.solution.toUpperCase()
-              ) {
-                usePuzzleStore.getState().revealCell(cursor.row, cursor.col);
-              }
-            }
-
-            // Advance cursor
-            const currentClue = selectCurrentClue(usePuzzleStore.getState());
-            if (currentClue) {
-              const next = getNextCellAfterInput(
-                puzzle,
-                currentClue,
-                direction,
-                cursor.row,
-                cursor.col,
-                settings,
-                state.pencilCells,
-              );
-              if (next) {
-                state.setCursor(next.cursor.row, next.cursor.col);
-                state.setDirection(next.direction);
-              }
-            }
-
-            // Check if puzzle is complete
-            usePuzzleStore.getState().checkSolution();
+          case "delete": {
+            state.setCellValue(cursor.row, cursor.col, null);
+            break;
           }
-          break;
+
+          case "rebus_mode": {
+            state.activateRebusMode();
+            break;
+          }
+
+          case "pencil_mode": {
+            state.togglePencilMode();
+            break;
+          }
         }
+        return;
+      }
+
+      // Shift key handling for temporary pencil mode
+      if (
+        e.key === "Shift" &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey &&
+        navSettings.shift_activates_pencil_mode
+      ) {
+        // Save current state and activate pencil mode
+        if (savedPencilModeRef.current === null) {
+          savedPencilModeRef.current = state.isPencilMode;
+          if (!state.isPencilMode) {
+            state.togglePencilMode();
+          }
+        }
+        return;
+      }
+
+      // Letter input (not configurable - always A-Z without modifiers)
+      if (e.key.length === 1 && /^[a-zA-Z]$/.test(e.key)) {
+        e.preventDefault();
+        if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+        state.setCellValue(cursor.row, cursor.col, e.key.toUpperCase());
+
+        // Auto-check behavior
+        const autoCheck = settings.auto_check;
+        if (autoCheck === "check") {
+          usePuzzleStore.getState().checkCell(cursor.row, cursor.col);
+        } else if (autoCheck === "reveal") {
+          // Check if the value is incorrect, then reveal
+          const freshCell =
+            usePuzzleStore.getState().puzzle?.grid[cursor.row][cursor.col];
+          if (
+            freshCell &&
+            freshCell.solution &&
+            freshCell.player_value?.toUpperCase() !==
+              freshCell.solution.toUpperCase()
+          ) {
+            usePuzzleStore.getState().revealCell(cursor.row, cursor.col);
+          }
+        }
+
+        // Advance cursor
+        const currentClue = selectCurrentClue(usePuzzleStore.getState());
+        if (currentClue) {
+          const next = getNextCellAfterInput(
+            puzzle,
+            currentClue,
+            direction,
+            cursor.row,
+            cursor.col,
+            navSettings,
+            state.pencilCells,
+          );
+          if (next) {
+            state.setCursor(next.cursor.row, next.cursor.col);
+            state.setDirection(next.direction);
+          }
+        }
+
+        // Check if puzzle is complete
+        usePuzzleStore.getState().checkSolution();
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      // Restore original pencil mode state when Shift is released
+      if (e.key === "Shift" && savedPencilModeRef.current !== null) {
+        const state = usePuzzleStore.getState();
+        const savedState = savedPencilModeRef.current;
+
+        // Restore to the saved state
+        if (state.isPencilMode !== savedState) {
+          state.togglePencilMode();
+        }
+
+        savedPencilModeRef.current = null;
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
   }, []);
 }
 

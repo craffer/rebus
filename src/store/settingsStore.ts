@@ -12,6 +12,7 @@ interface SettingsState {
   updateNavigation: (updates: Partial<Settings["navigation"]>) => void;
   updateFeedback: (updates: Partial<Settings["feedback"]>) => void;
   updateAppearance: (updates: Partial<Settings["appearance"]>) => void;
+  updateKeybindings: (updates: Partial<Settings["keybindings"]>) => void;
   resetToDefaults: () => void;
 }
 
@@ -44,6 +45,12 @@ export const useSettingsStore = create<SettingsState>()(
     updateAppearance: (updates) => {
       set((state) => {
         Object.assign(state.settings.appearance, updates);
+      });
+    },
+
+    updateKeybindings: (updates) => {
+      set((state) => {
+        Object.assign(state.settings.keybindings, updates);
       });
     },
 

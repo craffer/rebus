@@ -10,6 +10,37 @@ export type TimerDirection = "up" | "down";
 export type ClueFontSize = "small" | "medium" | "large";
 export type Theme = "light" | "dark" | "system";
 
+export type KeyBindingAction =
+  | "move_left"
+  | "move_right"
+  | "move_up"
+  | "move_down"
+  | "next_clue"
+  | "previous_clue"
+  | "next_clue_alt"
+  | "spacebar"
+  | "backspace"
+  | "delete"
+  | "rebus_mode"
+  | "pause"
+  | "pencil_mode";
+
+export interface KeyBindings {
+  move_left: string;
+  move_right: string;
+  move_up: string;
+  move_down: string;
+  next_clue: string;
+  previous_clue: string;
+  next_clue_alt: string;
+  spacebar: string;
+  backspace: string;
+  delete: string;
+  rebus_mode: string;
+  pause: string;
+  pencil_mode: string;
+}
+
 export interface NavigationSettings {
   arrow_key_behavior: ArrowKeyBehavior;
   spacebar_behavior: SpacebarBehavior;
@@ -18,6 +49,7 @@ export interface NavigationSettings {
   end_of_word_action: EndOfWordAction;
   tab_skip_completed_clues: TabSkipMode;
   scroll_clue_to_top: boolean;
+  shift_activates_pencil_mode: boolean;
 }
 
 export interface FeedbackSettings {
@@ -39,6 +71,7 @@ export interface Settings {
   navigation: NavigationSettings;
   feedback: FeedbackSettings;
   appearance: AppearanceSettings;
+  keybindings: KeyBindings;
   auto_check: AutoCheckMode;
   timer_direction: TimerDirection;
 }
@@ -52,6 +85,7 @@ export const DEFAULT_SETTINGS: Settings = {
     end_of_word_action: "stop",
     tab_skip_completed_clues: "ink_only",
     scroll_clue_to_top: true,
+    shift_activates_pencil_mode: true,
   },
   feedback: {
     play_sound_on_solve: true,
@@ -65,6 +99,21 @@ export const DEFAULT_SETTINGS: Settings = {
     clue_font_size: "medium",
     grid_scale: 1,
     show_incorrect_count: false,
+  },
+  keybindings: {
+    move_left: "ArrowLeft",
+    move_right: "ArrowRight",
+    move_up: "ArrowUp",
+    move_down: "ArrowDown",
+    next_clue: "Tab",
+    previous_clue: "Shift+Tab",
+    next_clue_alt: "Enter",
+    spacebar: " ",
+    backspace: "Backspace",
+    delete: "Delete",
+    rebus_mode: "Escape",
+    pause: ";",
+    pencil_mode: ".",
   },
   auto_check: "off",
   timer_direction: "up",
