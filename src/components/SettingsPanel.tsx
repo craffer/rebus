@@ -9,7 +9,6 @@ import type {
   EndOfWordAction,
   TabSkipMode,
   AutoCheckMode,
-  TimerDirection,
   ClueFontSize,
   Theme,
   KeyBindingAction,
@@ -121,10 +120,22 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
             { value: "large", label: "Large" },
           ]}
         />
-        <Toggle
-          label="Show incorrect count"
-          checked={settings.appearance.show_incorrect_count}
-          onChange={(v) => updateAppearance({ show_incorrect_count: v })}
+
+        {/* Assistance */}
+        <SectionHeader title="Assistance" />
+        <Select<AutoCheckMode>
+          label="Auto-check mode"
+          description="Automatically check each letter as you type and marks incorrect squares."
+          value={settings.auto_check}
+          onChange={(v) =>
+            useSettingsStore.setState((state) => ({
+              settings: { ...state.settings, auto_check: v },
+            }))
+          }
+          options={[
+            { value: "off", label: "Off" },
+            { value: "check", label: "On" },
+          ]}
         />
 
         {/* Navigation */}
@@ -193,6 +204,31 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
           label="Shift activates pencil mode"
           checked={settings.navigation.shift_activates_pencil_mode}
           onChange={(v) => updateNavigation({ shift_activates_pencil_mode: v })}
+        />
+
+        {/* Feedback */}
+        <SectionHeader title="Feedback" />
+        <Toggle
+          label="Play sound on solve"
+          checked={settings.feedback.play_sound_on_solve}
+          onChange={(v) => updateFeedback({ play_sound_on_solve: v })}
+        />
+        <Toggle
+          label="Show timer"
+          checked={settings.feedback.show_timer}
+          onChange={(v) => updateFeedback({ show_timer: v })}
+        />
+        <Toggle
+          label="Show puzzle milestones"
+          checked={settings.feedback.show_milestones}
+          onChange={(v) => updateFeedback({ show_milestones: v })}
+        />
+        <Toggle
+          label="Suppress disqualification warnings"
+          checked={settings.feedback.suppress_disqualification_warnings}
+          onChange={(v) =>
+            updateFeedback({ suppress_disqualification_warnings: v })
+          }
         />
 
         {/* Keyboard Shortcuts */}
@@ -348,61 +384,6 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
             />
           </>
         )}
-
-        {/* Feedback */}
-        <SectionHeader title="Feedback" />
-        <Toggle
-          label="Play sound on solve"
-          checked={settings.feedback.play_sound_on_solve}
-          onChange={(v) => updateFeedback({ play_sound_on_solve: v })}
-        />
-        <Toggle
-          label="Show timer"
-          checked={settings.feedback.show_timer}
-          onChange={(v) => updateFeedback({ show_timer: v })}
-        />
-        <Toggle
-          label="Show puzzle milestones"
-          checked={settings.feedback.show_milestones}
-          onChange={(v) => updateFeedback({ show_milestones: v })}
-        />
-        <Toggle
-          label="Suppress disqualification warnings"
-          checked={settings.feedback.suppress_disqualification_warnings}
-          onChange={(v) =>
-            updateFeedback({ suppress_disqualification_warnings: v })
-          }
-        />
-
-        {/* Other */}
-        <SectionHeader title="Other" />
-        <Select<AutoCheckMode>
-          label="Auto-check mode"
-          value={settings.auto_check}
-          onChange={(v) =>
-            useSettingsStore.setState((state) => ({
-              settings: { ...state.settings, auto_check: v },
-            }))
-          }
-          options={[
-            { value: "off", label: "Off" },
-            { value: "check", label: "Check" },
-            { value: "reveal", label: "Reveal" },
-          ]}
-        />
-        <Select<TimerDirection>
-          label="Timer direction"
-          value={settings.timer_direction}
-          onChange={(v) =>
-            useSettingsStore.setState((state) => ({
-              settings: { ...state.settings, timer_direction: v },
-            }))
-          }
-          options={[
-            { value: "up", label: "Count up" },
-            { value: "down", label: "Count down" },
-          ]}
-        />
 
         {/* Reset */}
         <div className="mt-6 border-t border-gray-200 pt-4 dark:border-gray-700">
