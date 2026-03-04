@@ -54,15 +54,11 @@ export interface NavigationSettings {
 export interface FeedbackSettings {
   play_sound_on_solve: boolean;
   show_timer: boolean;
-  show_milestones: boolean;
-  suppress_disqualification_warnings: boolean;
 }
 
 export interface AppearanceSettings {
   theme: Theme;
-  highlight_color: string;
   clue_font_size: ClueFontSize;
-  grid_scale: number;
 }
 
 export interface Settings {
@@ -87,14 +83,10 @@ export const DEFAULT_SETTINGS: Settings = {
   feedback: {
     play_sound_on_solve: true,
     show_timer: true,
-    show_milestones: true,
-    suppress_disqualification_warnings: false,
   },
   appearance: {
     theme: "system",
-    highlight_color: "#3478F6",
     clue_font_size: "medium",
-    grid_scale: 1,
   },
   keybindings: {
     move_left: "ArrowLeft",

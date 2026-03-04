@@ -218,18 +218,6 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
           checked={settings.feedback.show_timer}
           onChange={(v) => updateFeedback({ show_timer: v })}
         />
-        <Toggle
-          label="Show puzzle milestones"
-          checked={settings.feedback.show_milestones}
-          onChange={(v) => updateFeedback({ show_milestones: v })}
-        />
-        <Toggle
-          label="Suppress disqualification warnings"
-          checked={settings.feedback.suppress_disqualification_warnings}
-          onChange={(v) =>
-            updateFeedback({ suppress_disqualification_warnings: v })
-          }
-        />
 
         {/* Keyboard Shortcuts */}
         <SectionHeader title="Keyboard Shortcuts" />
