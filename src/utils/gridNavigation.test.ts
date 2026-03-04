@@ -101,6 +101,7 @@ const defaultNavSettings: NavigationSettings = {
   end_of_word_action: "stop",
   tab_skip_completed_clues: "ink_only",
   scroll_clue_to_top: true,
+  shift_activates_pencil_mode: true,
 };
 
 describe("isLetterCell", () => {

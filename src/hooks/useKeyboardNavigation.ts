@@ -25,6 +25,14 @@ export function useKeyboardNavigation() {
   // Track the original pencil mode state before Shift was pressed
   const savedPencilModeRef = useRef<boolean | null>(null);
 
+  // When auto-check is enabled, immediately check all existing filled cells
+  const autoCheck = useSettingsStore((s) => s.settings.auto_check);
+  useEffect(() => {
+    if (autoCheck === "check") {
+      usePuzzleStore.getState().checkPuzzle();
+    }
+  }, [autoCheck]);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const state = usePuzzleStore.getState();
@@ -236,21 +244,8 @@ export function useKeyboardNavigation() {
         state.setCellValue(cursor.row, cursor.col, e.key.toUpperCase());
 
         // Auto-check behavior
-        const autoCheck = settings.auto_check;
-        if (autoCheck === "check") {
+        if (settings.auto_check === "check") {
           usePuzzleStore.getState().checkCell(cursor.row, cursor.col);
-        } else if (autoCheck === "reveal") {
-          // Check if the value is incorrect, then reveal
-          const freshCell =
-            usePuzzleStore.getState().puzzle?.grid[cursor.row][cursor.col];
-          if (
-            freshCell &&
-            freshCell.solution &&
-            freshCell.player_value?.toUpperCase() !==
-              freshCell.solution.toUpperCase()
-          ) {
-            usePuzzleStore.getState().revealCell(cursor.row, cursor.col);
-          }
         }
 
         // Advance cursor

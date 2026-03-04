@@ -197,6 +197,8 @@ describe("keyboardUtils", () => {
         backspace: "Backspace",
         delete: "Delete",
         rebus_mode: "Escape",
+        pause: ";",
+        pencil_mode: ".",
       };
 
       const lookup = buildActionLookup(keybindings);
@@ -220,6 +222,8 @@ describe("keyboardUtils", () => {
         backspace: "Backspace",
         delete: "Delete",
         rebus_mode: "r",
+        pause: ";",
+        pencil_mode: ".",
       };
 
       const lookup = buildActionLookup(keybindings);
@@ -242,6 +246,8 @@ describe("keyboardUtils", () => {
         backspace: "Backspace",
         delete: "Delete",
         rebus_mode: "Escape",
+        pause: ";",
+        pencil_mode: ".",
       };
 
       const lookup = buildActionLookup(keybindings);
@@ -264,6 +270,8 @@ describe("keyboardUtils", () => {
       backspace: "Backspace",
       delete: "Delete",
       rebus_mode: "Escape",
+      pause: ";",
+      pencil_mode: ".",
     };
 
     it("finds action bound to a key", () => {

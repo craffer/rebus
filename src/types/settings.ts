@@ -5,8 +5,7 @@ export type EndOfWordAction =
   | "jump_back_to_blank"
   | "jump_to_next_clue";
 export type TabSkipMode = "none" | "ink_only" | "all_filled";
-export type AutoCheckMode = "off" | "check" | "reveal";
-export type TimerDirection = "up" | "down";
+export type AutoCheckMode = "off" | "check";
 export type ClueFontSize = "small" | "medium" | "large";
 export type Theme = "light" | "dark" | "system";
 
@@ -55,16 +54,11 @@ export interface NavigationSettings {
 export interface FeedbackSettings {
   play_sound_on_solve: boolean;
   show_timer: boolean;
-  show_milestones: boolean;
-  suppress_disqualification_warnings: boolean;
 }
 
 export interface AppearanceSettings {
   theme: Theme;
-  highlight_color: string;
   clue_font_size: ClueFontSize;
-  grid_scale: number;
-  show_incorrect_count: boolean;
 }
 
 export interface Settings {
@@ -73,7 +67,6 @@ export interface Settings {
   appearance: AppearanceSettings;
   keybindings: KeyBindings;
   auto_check: AutoCheckMode;
-  timer_direction: TimerDirection;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -90,15 +83,10 @@ export const DEFAULT_SETTINGS: Settings = {
   feedback: {
     play_sound_on_solve: true,
     show_timer: true,
-    show_milestones: true,
-    suppress_disqualification_warnings: false,
   },
   appearance: {
     theme: "system",
-    highlight_color: "#3478F6",
     clue_font_size: "medium",
-    grid_scale: 1,
-    show_incorrect_count: false,
   },
   keybindings: {
     move_left: "ArrowLeft",
@@ -116,5 +104,4 @@ export const DEFAULT_SETTINGS: Settings = {
     pencil_mode: ".",
   },
   auto_check: "off",
-  timer_direction: "up",
 };

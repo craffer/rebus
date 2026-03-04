@@ -1,8 +1,16 @@
 import { useRef, useEffect } from "react";
 import type { Clue } from "../../types/puzzle";
 import type { ClueHighlight } from "./ClueList";
+import { useSettingsStore } from "../../store/settingsStore";
+import type { ClueFontSize } from "../../types/settings";
 
 const SCROLL_DURATION_MS = 200;
+
+const FONT_SIZE_CLASS: Record<ClueFontSize, string> = {
+  small: "text-xs",
+  medium: "text-sm",
+  large: "text-base",
+};
 
 function easeInOutCubic(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
@@ -31,8 +39,12 @@ function smoothScrollTo(container: Element, targetTop: number) {
   requestAnimationFrame(step);
 }
 
-function getClassName(highlight: ClueHighlight, isComplete: boolean): string {
-  const base = "cursor-pointer rounded px-2 py-1 text-sm";
+function getClassName(
+  highlight: ClueHighlight,
+  isComplete: boolean,
+  fontSize: ClueFontSize,
+): string {
+  const base = `cursor-pointer rounded px-2 py-1 ${FONT_SIZE_CLASS[fontSize]}`;
 
   if (highlight === "primary") {
     const text = isComplete
@@ -71,6 +83,9 @@ export default function ClueItem({
 }: ClueItemProps) {
   const ref = useRef<HTMLLIElement>(null);
   const isHighlighted = highlight !== null;
+  const fontSize = useSettingsStore(
+    (s) => s.settings.appearance.clue_font_size,
+  );
 
   // Auto-scroll to highlighted clue (both primary and cross)
   useEffect(() => {
@@ -91,7 +106,7 @@ export default function ClueItem({
       ref={ref}
       onClick={() => onClick(clue)}
       data-number={`${clue.number}.`}
-      className={`clue-item ${getClassName(highlight, isComplete)}`}
+      className={`clue-item ${getClassName(highlight, isComplete, fontSize)}`}
     >
       {clue.text}
     </li>

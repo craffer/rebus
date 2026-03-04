@@ -110,8 +110,8 @@ describe("settingsStore", () => {
     it("preserves other appearance settings", () => {
       useSettingsStore.getState().updateAppearance({ theme: "dark" });
       expect(
-        useSettingsStore.getState().settings.appearance.highlight_color,
-      ).toBe("#3478F6");
+        useSettingsStore.getState().settings.appearance.clue_font_size,
+      ).toBe("medium");
     });
   });
 
