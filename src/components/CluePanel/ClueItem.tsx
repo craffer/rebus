@@ -106,6 +106,7 @@ export default function ClueItem({
       ref={ref}
       onClick={() => onClick(clue)}
       data-number={`${clue.number}.`}
+      aria-current={highlight === "primary" ? "true" : undefined}
       className={`clue-item ${getClassName(highlight, isComplete, fontSize)}`}
     >
       {clue.text}

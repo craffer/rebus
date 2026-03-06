@@ -66,7 +66,7 @@ rebus/
 │       │   ├── types.rs           # Puzzle, Cell, Clue, CellKind structs
 │       │   ├── puz.rs             # .puz binary parser
 │       │   ├── ipuz.rs            # .ipuz JSON parser
-│       │   ├── jpz.rs             # .jpz XML parser
+│       │   ├── jpz.rs             # .jpz XML + ZIP parser
 │       │   └── error.rs           # Error types
 │       ├── tests/
 │       │   ├── fixtures/          # Real .puz, .ipuz, .jpz test files
@@ -76,11 +76,11 @@ rebus/
 │   ├── src/
 │   │   ├── main.rs
 │   │   ├── lib.rs                 # Tauri builder, plugin + command registration
-│   │   └── commands.rs            # open_puzzle, check, reveal commands
+│   │   └── commands.rs            # open_puzzle Tauri command
 │   └── Cargo.toml                 # depends on xword-parser via path
 ├── src/                           # React frontend
 │   ├── main.tsx
-│   ├── App.tsx
+│   ├── App.tsx                    # Root component, global effects
 │   ├── components/
 │   │   ├── Grid/
 │   │   │   ├── Grid.tsx           # Canvas setup, mouse handling, Zustand subscription
@@ -90,31 +90,50 @@ rebus/
 │   │   │   ├── CluePanel.tsx
 │   │   │   ├── ClueList.tsx
 │   │   │   └── ClueItem.tsx
+│   │   ├── ui/
+│   │   │   ├── Toggle.tsx         # Settings toggle component
+│   │   │   ├── Select.tsx         # Settings select component
+│   │   │   └── KeyBindingInput.tsx # Keybinding capture input
+│   │   ├── CompletionOverlay.tsx  # Confetti + celebration animation
+│   │   ├── PuzzleLibrary.tsx      # Library grid with folders/sort/filter
+│   │   ├── SettingsPanel.tsx      # Settings modal (Cmd+,)
 │   │   ├── Toolbar.tsx
 │   │   ├── Timer.tsx
 │   │   └── WelcomeScreen.tsx
 │   ├── hooks/
 │   │   ├── useKeyboardNavigation.ts
 │   │   ├── usePuzzleLoader.ts
+│   │   ├── useDragDrop.ts         # Tauri webview drag-drop events
+│   │   ├── useTheme.ts            # System/light/dark mode detection
 │   │   └── useTimer.ts
 │   ├── store/
-│   │   ├── puzzleStore.ts
-│   │   ├── settingsStore.ts
+│   │   ├── puzzleStore.ts         # Puzzle state, cursor, timer, check/reveal
+│   │   ├── settingsStore.ts       # User preferences, persisted to disk
+│   │   ├── libraryStore.ts        # Puzzle library, folders, sort/filter
 │   │   └── selectors.ts
 │   ├── types/
 │   │   ├── puzzle.ts              # Mirrors Rust Puzzle types
-│   │   └── settings.ts
+│   │   ├── settings.ts
+│   │   └── library.ts
 │   ├── utils/
-│   │   └── gridNavigation.ts      # Next cell, word boundaries, etc.
+│   │   ├── gridNavigation.ts      # Next cell, word boundaries, etc.
+│   │   ├── libraryPersistence.ts  # Load/save library JSON via Tauri fs
+│   │   ├── settingsPersistence.ts # Load/save settings JSON via Tauri fs
+│   │   ├── progressAutoSave.ts    # Debounced progress auto-save
+│   │   ├── celebrationSound.ts    # Web Audio completion chime
+│   │   ├── completionPercent.ts   # Puzzle completion % calculation
+│   │   ├── formatting.ts          # Time/date formatting
+│   │   └── keyboardUtils.ts       # Keybinding string parsing
 │   └── styles/
 │       └── index.css
+├── CHANGELOG.md                   # Keep a Changelog format
+├── PLAN.md                        # This file
 ├── index.html
 ├── package.json
 ├── vite.config.ts
 ├── tsconfig.json
 ├── eslint.config.js               # ESLint flat config
 ├── .prettierrc
-├── .pre-commit-config.yaml        # Pre-commit hooks
 ├── Cargo.toml                     # Workspace root
 └── CLAUDE.md
 ```
@@ -253,12 +272,12 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - [x] Redacted clue list during pause (clue numbers visible, text replaced with gray bars)
 - [x] Tests: 10 new tests in `puzzleStore.test.ts` (isClueComplete + pause behavior)
 
-### Step 8: Add .ipuz, .jpz, and .xml Parsers
+### Step 8: Add .ipuz, .jpz, and .xml Parsers ✅
 - Files: `crates/xword-parser/src/ipuz.rs`, `crates/xword-parser/src/jpz.rs`
-- [ ] .ipuz parser (JSON format, uses `serde_json`)
-- [ ] .jpz parser (ZIP-compressed XML, uses `quick-xml` + `zip`)
-- [ ] .xml parser (raw Crossword Compiler XML, shares jpz parser)
-- [ ] Unit tests with real PuzzleMe fixture files
+- [x] .ipuz parser (JSON format, uses `serde_json`)
+- [x] .jpz parser (ZIP-compressed XML, uses `quick-xml` + `zip`)
+- [x] .xml parser (raw Crossword Compiler XML, shares jpz parser)
+- [x] Unit tests with real PuzzleMe fixture files
 - [x] `open_puzzle` command already dispatches by extension
 
 ## Phase 2
@@ -269,11 +288,11 @@ The `useKeyboardNavigation` hook and `gridNavigation.ts` utilities read from `se
 - [x] Check/reveal (per-cell, per-word, full puzzle)
 - [x] Pencil mode, rebus mode UI
 - [x] Save/resume progress to disk
-- [ ] Recent files / Puzzle Library (see design below)
-- [ ] Custom key bindings UI
+- [x] Recent files / Puzzle Library (card grid, folders, drag-drop, sort/filter)
+- [x] Custom key bindings UI (KeyBindingInput component in Settings panel)
+- [x] Better app icon (custom SVG grid icon with multi-resolution export)
 - [ ] Countdown timer mode (for timed practice)
 - [ ] Puzzle statistics tracking (solve times, streaks)
-- [ ] Better app icon
 
 ### Recent Files / Puzzle Library (Design)
 A rich UI for accessing previously opened puzzles, replacing the basic welcome screen:

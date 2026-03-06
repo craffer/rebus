@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { check as checkForUpdate } from "@tauri-apps/plugin-updater";
+import { ask } from "@tauri-apps/plugin-dialog";
 import { usePuzzleStore } from "./store/puzzleStore";
 import { useSettingsStore } from "./store/settingsStore";
 import { useLibraryStore } from "./store/libraryStore";
@@ -29,6 +31,7 @@ function App() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [wasTimerRunningBeforeSettings, setWasTimerRunningBeforeSettings] =
     useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
   useKeyboardNavigation();
   useTimer();
@@ -37,6 +40,26 @@ function App() {
   useEffect(() => {
     useSettingsStore.getState()._initSettings();
     useLibraryStore.getState()._initLibrary();
+  }, []);
+
+  // Check for updates in the background on startup — non-blocking
+  useEffect(() => {
+    (async () => {
+      try {
+        const update = await checkForUpdate();
+        if (update?.available) {
+          const yes = await ask(
+            `Rebus ${update.version} is available. Install now?`,
+            { title: "Update Available", kind: "info" },
+          );
+          if (yes) {
+            await update.downloadAndInstall();
+          }
+        }
+      } catch {
+        // Silently ignore update check failures (offline, bad endpoint, etc.)
+      }
+    })();
   }, []);
 
   // Toggle dark class on <html> for Tailwind dark: variant
@@ -48,6 +71,7 @@ function App() {
   useEffect(() => {
     if (justSolved) {
       setShowCelebration(true);
+      setStatusMessage("Puzzle complete!");
       const playSoundOnSolve =
         useSettingsStore.getState().settings.feedback.play_sound_on_solve;
       if (playSoundOnSolve) {
@@ -56,6 +80,22 @@ function App() {
       usePuzzleStore.getState().dismissJustSolved();
     }
   }, [justSolved]);
+
+  // Announce incorrect notice to screen readers
+  useEffect(() => {
+    if (showIncorrectNotice) {
+      setStatusMessage("Incorrect — some answers need fixing.");
+    }
+  }, [showIncorrectNotice]);
+
+  // Announce puzzle loaded
+  useEffect(() => {
+    if (puzzle) {
+      setStatusMessage(
+        puzzle.title ? `Puzzle loaded: ${puzzle.title}` : "Puzzle loaded",
+      );
+    }
+  }, [puzzle?.title]);
 
   // Cmd+O / Ctrl+O to open a puzzle, Cmd+, to open settings
   useEffect(() => {
@@ -110,9 +150,16 @@ function App() {
     document.title = "Rebus";
   }, []);
 
+  const liveRegion = (
+    <div aria-live="polite" aria-atomic="true" className="sr-only">
+      {statusMessage}
+    </div>
+  );
+
   if (!puzzle) {
     return (
       <div className="flex h-screen flex-col">
+        {liveRegion}
         <Toolbar onOpenSettings={openSettings} onGoHome={goHome} />
         <WelcomeScreen />
         {showSettings && <SettingsPanel onClose={closeSettings} />}
@@ -124,6 +171,7 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-gray-900">
+      {liveRegion}
       <Toolbar onOpenSettings={openSettings} onGoHome={goHome} />
       <div className="flex min-h-0 flex-1">
         {/* Grid area */}

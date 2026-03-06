@@ -52,14 +52,14 @@ export const LIGHT_COLORS: ColorPalette = {
 };
 
 export const DARK_COLORS: ColorPalette = {
-  cellBackground: "#4A4A4A",
+  cellBackground: "#CCCCCC",
   blackCell: "#1A1A1A",
   gridBorder: "#333333",
   cellBorder: "#333333",
   cursorCell: "#C8A200",
-  wordHighlight: "#2A5080",
-  numberText: "#C0C0C0",
-  letterText: "#EDEDED",
+  wordHighlight: "#73a4b9",
+  numberText: "#333333",
+  letterText: "#000000",
   circle: "#C0C0C0",
   incorrect: "#FF5555",
   revealed: "#FF8C42",
