@@ -22,12 +22,8 @@ vi.mock("@tauri-apps/plugin-fs", () => ({
   writeTextFile: (...args: unknown[]) => mockWriteTextFile(...args),
 }));
 
-const {
-  loadLibrary,
-  saveLibrary,
-  loadFolders,
-  saveFolders,
-} = await import("./libraryPersistence");
+const { loadLibrary, saveLibrary, loadFolders, saveFolders } =
+  await import("./libraryPersistence");
 
 import type { LibraryEntry, LibraryFolder } from "../types/library";
 

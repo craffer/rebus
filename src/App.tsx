@@ -151,11 +151,7 @@ function App() {
   }, []);
 
   const liveRegion = (
-    <div
-      aria-live="polite"
-      aria-atomic="true"
-      className="sr-only"
-    >
+    <div aria-live="polite" aria-atomic="true" className="sr-only">
       {statusMessage}
     </div>
   );
