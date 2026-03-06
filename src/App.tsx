@@ -1,4 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
+import { check as checkForUpdate } from "@tauri-apps/plugin-updater";
+import { ask } from "@tauri-apps/plugin-dialog";
 import { usePuzzleStore } from "./store/puzzleStore";
 import { useSettingsStore } from "./store/settingsStore";
 import { useLibraryStore } from "./store/libraryStore";
@@ -37,6 +39,26 @@ function App() {
   useEffect(() => {
     useSettingsStore.getState()._initSettings();
     useLibraryStore.getState()._initLibrary();
+  }, []);
+
+  // Check for updates in the background on startup — non-blocking
+  useEffect(() => {
+    (async () => {
+      try {
+        const update = await checkForUpdate();
+        if (update?.available) {
+          const yes = await ask(
+            `Rebus ${update.version} is available. Install now?`,
+            { title: "Update Available", kind: "info" },
+          );
+          if (yes) {
+            await update.downloadAndInstall();
+          }
+        }
+      } catch {
+        // Silently ignore update check failures (offline, bad endpoint, etc.)
+      }
+    })();
   }, []);
 
   // Toggle dark class on <html> for Tailwind dark: variant
