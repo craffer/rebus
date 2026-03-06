@@ -37,7 +37,7 @@
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDQzOThFM0ZFOUZDNEM3QzUKUldURng4U2YvdU9ZUTNJcm5sa05QT3NLbTFoTi9IRkhJNC93cUdhNWNpT0ZGWUwxQ3VYcVV6SUcK",
       "endpoints": [
         "https://github.com/craffer/rebus/releases/latest/download/latest.json"
       ]
