@@ -15,6 +15,8 @@ export default function Timer() {
   return (
     <button
       onClick={() => (timerRunning ? pauseTimer() : resumeTimer())}
+      role="status"
+      aria-label={timerRunning ? "Pause timer" : "Resume timer"}
       className="flex items-center gap-1.5 rounded px-2 py-1 text-sm font-mono text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
       title={timerRunning ? "Pause timer" : "Resume timer"}
     >

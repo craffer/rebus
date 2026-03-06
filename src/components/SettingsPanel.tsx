@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSettingsStore } from "../store/settingsStore";
 import Toggle from "./ui/Toggle";
 import Select from "./ui/Select";
@@ -34,6 +34,47 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
   const updateKeybindings = useSettingsStore((s) => s.updateKeybindings);
   const resetToDefaults = useSettingsStore((s) => s.resetToDefaults);
   const [showAdvancedBindings, setShowAdvancedBindings] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Restore focus to the element that had it before the dialog opened
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement as HTMLElement;
+    return () => {
+      previousFocusRef.current?.focus();
+    };
+  }, []);
+
+  // Focus the dialog panel itself on mount so focus is inside the trap
+  useEffect(() => {
+    dialogRef.current?.focus();
+  }, []);
+
+  // Focus trap: keep Tab/Shift+Tab inside the dialog
+  const handleDialogKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key !== "Tab") return;
+      const el = dialogRef.current;
+      if (!el) return;
+      const focusable = el.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last?.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first?.focus();
+        }
+      }
+    },
+    [],
+  );
 
   const handleKeyBindingChange = (action: KeyBindingAction, keyStr: string) => {
     updateKeybindings({ [action]: keyStr });
@@ -69,15 +110,21 @@ export default function SettingsPanel({ onClose }: SettingsPanelProps) {
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Settings"
+      aria-labelledby="settings-dialog-title"
     >
       <div
-        className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800"
+        ref={dialogRef}
+        tabIndex={-1}
+        className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-xl bg-white p-6 shadow-2xl dark:bg-gray-800 focus:outline-none"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={handleDialogKeyDown}
       >
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h2
+            id="settings-dialog-title"
+            className="text-lg font-semibold text-gray-900 dark:text-gray-100"
+          >
             Settings
           </h2>
           <button

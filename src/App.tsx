@@ -31,6 +31,7 @@ function App() {
   const [confirmReset, setConfirmReset] = useState(false);
   const [wasTimerRunningBeforeSettings, setWasTimerRunningBeforeSettings] =
     useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
 
   useKeyboardNavigation();
   useTimer();
@@ -70,6 +71,7 @@ function App() {
   useEffect(() => {
     if (justSolved) {
       setShowCelebration(true);
+      setStatusMessage("Puzzle complete!");
       const playSoundOnSolve =
         useSettingsStore.getState().settings.feedback.play_sound_on_solve;
       if (playSoundOnSolve) {
@@ -78,6 +80,22 @@ function App() {
       usePuzzleStore.getState().dismissJustSolved();
     }
   }, [justSolved]);
+
+  // Announce incorrect notice to screen readers
+  useEffect(() => {
+    if (showIncorrectNotice) {
+      setStatusMessage("Incorrect — some answers need fixing.");
+    }
+  }, [showIncorrectNotice]);
+
+  // Announce puzzle loaded
+  useEffect(() => {
+    if (puzzle) {
+      setStatusMessage(
+        puzzle.title ? `Puzzle loaded: ${puzzle.title}` : "Puzzle loaded",
+      );
+    }
+  }, [puzzle?.title]);
 
   // Cmd+O / Ctrl+O to open a puzzle, Cmd+, to open settings
   useEffect(() => {
@@ -132,9 +150,20 @@ function App() {
     document.title = "Rebus";
   }, []);
 
+  const liveRegion = (
+    <div
+      aria-live="polite"
+      aria-atomic="true"
+      className="sr-only"
+    >
+      {statusMessage}
+    </div>
+  );
+
   if (!puzzle) {
     return (
       <div className="flex h-screen flex-col">
+        {liveRegion}
         <Toolbar onOpenSettings={openSettings} onGoHome={goHome} />
         <WelcomeScreen />
         {showSettings && <SettingsPanel onClose={closeSettings} />}
@@ -146,6 +175,7 @@ function App() {
 
   return (
     <div className="flex h-screen flex-col bg-white dark:bg-gray-900">
+      {liveRegion}
       <Toolbar onOpenSettings={openSettings} onGoHome={goHome} />
       <div className="flex min-h-0 flex-1">
         {/* Grid area */}

@@ -50,6 +50,7 @@ export default function Toolbar({ onOpenSettings, onGoHome }: ToolbarProps) {
           <button
             onClick={onGoHome}
             className="rounded p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            aria-label="Back to library"
             title="Back to library"
           >
             <svg
@@ -187,6 +188,8 @@ export default function Toolbar({ onOpenSettings, onGoHome }: ToolbarProps) {
                 ? "rounded bg-blue-500 px-3 py-1 text-sm font-medium text-white hover:bg-blue-600"
                 : btnClass
             }
+            aria-label={isPencilMode ? "Pencil mode (on)" : "Pencil mode"}
+            aria-pressed={isPencilMode}
             title="Pencil mode"
           >
             <svg
@@ -244,6 +247,7 @@ export default function Toolbar({ onOpenSettings, onGoHome }: ToolbarProps) {
           <button
             onClick={onOpenSettings}
             className="rounded p-1.5 text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
+            aria-label="Settings"
             title="Settings"
           >
             <svg
